@@ -59,6 +59,20 @@ public class ChessPiece {
         return type;
     }
 
+    public String printPiece() {
+        PieceType t = this.type;
+        boolean isBlack = this.team == ChessGame.TeamColor.BLACK;
+        switch (t) {
+            case PAWN -> { return (isBlack) ? "p": "P"; }
+            case BISHOP -> { return (isBlack) ? "b": "B"; }
+            case KNIGHT -> { return (isBlack) ? "n": "N"; }
+            case ROOK -> { return (isBlack) ? "r": "R"; }
+            case QUEEN -> { return (isBlack) ? "q": "Q"; }
+            case KING -> { return (isBlack) ? "k": "K"; }
+        }
+        return null;
+    }
+
     /**
      * Calculates all the positions a chess piece can move to
      * Does not take into account moves that are illegal due to leaving the king in
