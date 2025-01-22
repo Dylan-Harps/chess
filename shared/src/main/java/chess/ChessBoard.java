@@ -41,39 +41,43 @@ public class ChessBoard {
         return board[position.getRow()-1][position.getColumn()-1];
     }
 
+    private void clearRow(int r) {
+        for(int i = 0; i < 8; ++i) {
+            board[r][i] = null;
+        }
+    }
+
+    private void pawnRow(int r, ChessGame.TeamColor t) {
+        for(int i = 0; i < 8; ++i) {
+            board[r][i] = new ChessPiece(t, ChessPiece.PieceType.PAWN);
+        }
+    }
+
+    private void homeRow(int r, ChessGame.TeamColor t) {
+        board[r][0] = new ChessPiece(t, ChessPiece.PieceType.ROOK);
+        board[r][1] = new ChessPiece(t, ChessPiece.PieceType.KNIGHT);
+        board[r][2] = new ChessPiece(t, ChessPiece.PieceType.BISHOP);
+        board[r][3] = new ChessPiece(t, ChessPiece.PieceType.QUEEN);
+        board[r][4] = new ChessPiece(t, ChessPiece.PieceType.KING);
+        board[r][5] = new ChessPiece(t, ChessPiece.PieceType.BISHOP);
+        board[r][6] = new ChessPiece(t, ChessPiece.PieceType.KNIGHT);
+        board[r][7] = new ChessPiece(t, ChessPiece.PieceType.ROOK);
+    }
+
     /**
      * Sets the board to the default starting board
      * (How the game of chess normally starts)
      */
     public void resetBoard() {
-        //white back row
-        board[0][0] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK);
-        board[0][1] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KNIGHT);
-        board[0][2] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.BISHOP);
-        board[0][3] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.QUEEN);
-        board[0][4] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KING);
-        board[0][5] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.BISHOP);
-        board[0][6] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KNIGHT);
-        board[0][7] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK);
-
-        //white pawns
-        for(int i = 0; i < 8; ++i) {
-            board[1][i] = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN);
-        }
-
-        //black back row
-        board[7][0] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.ROOK);
-        board[7][1] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KNIGHT);
-        board[7][2] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.BISHOP);
-        board[7][3] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.QUEEN);
-        board[7][4] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KING);
-        board[7][5] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.BISHOP);
-        board[7][6] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KNIGHT);
-        board[7][7] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.ROOK);
-
-        //black pawns
-        for(int i = 0; i < 8; ++i) {
-            board[6][i] = new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN);
+        ChessGame.TeamColor color = ChessGame.TeamColor.WHITE;
+        for (int row = 0; row < 8; ++row) {
+            switch (row) {
+                case 0 -> { homeRow(row, ChessGame.TeamColor.WHITE); }
+                case 1 -> { pawnRow(row, ChessGame.TeamColor.WHITE); }
+                case 6 -> { pawnRow(row, ChessGame.TeamColor.BLACK); }
+                case 7 -> { homeRow(row, ChessGame.TeamColor.BLACK); }
+                default -> { clearRow(row); }
+            }
         }
     }
 
