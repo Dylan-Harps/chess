@@ -164,6 +164,7 @@ public class PieceMovesCalculator {
     }
 
     private boolean isEnemy(ChessPiece piece2) {
+        if (piece2 == null) return false;
         return piece.getTeamColor() != piece2.getTeamColor();
     }
 
