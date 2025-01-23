@@ -1,7 +1,8 @@
 package chess;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 
 public class PieceMovesCalculator {
     ChessPiece piece;
@@ -15,7 +16,7 @@ public class PieceMovesCalculator {
     }
 
     public Collection<ChessMove> calculateMoves() {
-        Collection<ChessMove> validMoves = Collections.emptyList();
+        List<ChessMove> validMoves = new ArrayList<ChessMove>();
         switch (piece.getPieceType()) {
             case ChessPiece.PieceType.PAWN -> { calculatePawnMoves(validMoves); }
             case ChessPiece.PieceType.ROOK -> { calculateRookMoves(validMoves); }
@@ -28,18 +29,101 @@ public class PieceMovesCalculator {
     }
 
     private void calculateQueenMoves(Collection<ChessMove> validMoves) {
+        calculateBishopMoves(validMoves);
+        calculateRookMoves(validMoves);
     }
 
     private void calculateKingMoves(Collection<ChessMove> validMoves) {
+        for (int r = -1; r <= 1; ++r) {
+            for (int c = -1; c <= 1; ++c) {
+                if (r == 0 && c == 0) continue;
+                ChessPosition currSpace = new ChessPosition(startPosition.getRow() + r, startPosition.getColumn() + c);
+                if (isValidSpace(currSpace)) {
+                    validMoves.add(new ChessMove(startPosition, currSpace, null));
+                }
+            }
+        }
     }
 
     private void calculateBishopMoves(Collection<ChessMove> validMoves) {
+        //check top left
+        for (int i = 1; i <= 8; ++i) {
+            ChessPosition currSpace = new ChessPosition(startPosition.getRow() + i, startPosition.getColumn() - i);
+            if (isValidSpace(currSpace)) validMoves.add(new ChessMove(startPosition, currSpace, null));
+            else break;
+            if (isEnemy(board.getPiece(currSpace))) break;
+            //the breaks make it stop searching for valid moves once it finds a piece
+        }
+        //check top right
+        for (int i = 1; i <= 8; ++i) {
+            ChessPosition currSpace = new ChessPosition(startPosition.getRow() + i, startPosition.getColumn() + i);
+            if (isValidSpace(currSpace)) validMoves.add(new ChessMove(startPosition, currSpace, null));
+            else break;
+            if (isEnemy(board.getPiece(currSpace))) break;
+        }
+        //check bottom right
+        for (int i = 1; i <= 8; ++i) {
+            ChessPosition currSpace = new ChessPosition(startPosition.getRow() - i, startPosition.getColumn() + i);
+            if (isValidSpace(currSpace)) validMoves.add(new ChessMove(startPosition, currSpace, null));
+            else break;
+            if (isEnemy(board.getPiece(currSpace))) break;
+            //the breaks make it stop searching for valid moves once it finds a piece
+        }
+        //check bottom left
+        for (int i = 1; i <= 8; ++i) {
+            ChessPosition currSpace = new ChessPosition(startPosition.getRow() - i, startPosition.getColumn() - i);
+            if (isValidSpace(currSpace)) validMoves.add(new ChessMove(startPosition, currSpace, null));
+            else break;
+            if (isEnemy(board.getPiece(currSpace))) break;
+        }
     }
 
     private void calculateKnightMoves(Collection<ChessMove> validMoves) {
+        ChessPosition[] spacesToCheck = {
+                new ChessPosition(startPosition.getRow() + 1, startPosition.getColumn() + 2),
+                new ChessPosition(startPosition.getRow() - 1, startPosition.getColumn() + 2),
+                new ChessPosition(startPosition.getRow() + 1, startPosition.getColumn() - 2),
+                new ChessPosition(startPosition.getRow() - 1, startPosition.getColumn() - 2),
+                new ChessPosition(startPosition.getRow() + 2, startPosition.getColumn() + 1),
+                new ChessPosition(startPosition.getRow() - 2, startPosition.getColumn() + 1),
+                new ChessPosition(startPosition.getRow() + 2, startPosition.getColumn() - 1),
+                new ChessPosition(startPosition.getRow() - 2, startPosition.getColumn() - 1),
+        };
+
+        for (ChessPosition currSpace : spacesToCheck) {
+            if (isValidSpace(currSpace)) validMoves.add(new ChessMove(startPosition, currSpace, null));
+        }
     }
 
     private void calculateRookMoves(Collection<ChessMove> validMoves) {
+        //check upwards spaces
+        for (int r = startPosition.getRow() + 1; r <= 8; ++r) {
+            ChessPosition currSpace = new ChessPosition(r, startPosition.getColumn());
+            if (isValidSpace(currSpace)) validMoves.add(new ChessMove(startPosition, currSpace, null));
+            else break;
+            if (isEnemy(board.getPiece(currSpace))) break;
+        }
+        //check right spaces
+        for (int c = startPosition.getColumn() + 1; c <= 8; ++c) {
+            ChessPosition currSpace = new ChessPosition(startPosition.getRow(), c);
+            if (isValidSpace(currSpace)) validMoves.add(new ChessMove(startPosition, currSpace, null));
+            else break;
+            if (isEnemy(board.getPiece(currSpace))) break;
+        }
+        //check downwards spaces
+        for (int r = startPosition.getRow() - 1; r >=1; --r) {
+            ChessPosition currSpace = new ChessPosition(r, startPosition.getColumn());
+            if (isValidSpace(currSpace)) validMoves.add(new ChessMove(startPosition, currSpace, null));
+            else break;
+            if (isEnemy(board.getPiece(currSpace))) break;
+        }
+        //check left spaces
+        for (int c = startPosition.getColumn() - 1; c >= 1; --c) {
+            ChessPosition currSpace = new ChessPosition(startPosition.getRow(), c);
+            if (isValidSpace(currSpace)) validMoves.add(new ChessMove(startPosition, currSpace, null));
+            else break;
+            if (isEnemy(board.getPiece(currSpace))) break;
+        }
     }
 
     private void calculatePawnMoves(Collection<ChessMove> validMoves) {
@@ -58,20 +142,20 @@ public class PieceMovesCalculator {
 
         //look at the space diagonal and to the left
         ChessPosition leftCapture = new ChessPosition(frontSpace.getRow(), frontSpace.getColumn() - 1);
-        if (inBounds(leftCapture) && !isEmpty(leftCapture) && isEnemy(piece, board.getPiece(leftCapture))) {
+        if (isInBounds(leftCapture) && !isEmpty(leftCapture) && isEnemy(board.getPiece(leftCapture))) {
             if (isLastRow(leftCapture.getRow(), piece.getTeamColor())) addPromotions(validMoves, leftCapture);
             else validMoves.add(new ChessMove(startPosition, leftCapture, null));
         }
 
         //look at the space diagonal and to the right
         ChessPosition rightCapture = new ChessPosition(frontSpace.getRow(), frontSpace.getColumn() + 1);
-        if (inBounds(rightCapture) && !isEmpty(rightCapture) && isEnemy(piece, board.getPiece(rightCapture))) {
+        if (isInBounds(rightCapture) && !isEmpty(rightCapture) && isEnemy(board.getPiece(rightCapture))) {
             if (isLastRow(rightCapture.getRow(), piece.getTeamColor())) addPromotions(validMoves, rightCapture);
             else validMoves.add(new ChessMove(startPosition, rightCapture, null));
         }
     }
 
-    private boolean inBounds(ChessPosition pos) {
+    private boolean isInBounds(ChessPosition pos) {
         return pos.getRow() <= 8 && pos.getRow() >= 1 && pos.getColumn() <= 8 && pos.getColumn() >= 1;
     }
 
@@ -79,8 +163,12 @@ public class PieceMovesCalculator {
         return board.getPiece(position) == null;
     }
 
-    private boolean isEnemy(ChessPiece piece1, ChessPiece piece2) {
-        return piece1.getTeamColor() != piece2.getTeamColor();
+    private boolean isEnemy(ChessPiece piece2) {
+        return piece.getTeamColor() != piece2.getTeamColor();
+    }
+
+    private boolean isValidSpace(ChessPosition position) {
+        return isInBounds(position) && (isEmpty(position) || isEnemy(board.getPiece(position)));
     }
 
     private int forward(ChessGame.TeamColor teamColor) {
@@ -93,11 +181,10 @@ public class PieceMovesCalculator {
         else return row == 1;
     }
 
-    private Collection<ChessMove> addPromotions(Collection<ChessMove> validMoves, ChessPosition endPos) {
+    private void addPromotions(Collection<ChessMove> validMoves, ChessPosition endPos) {
         validMoves.add(new ChessMove(startPosition, endPos, ChessPiece.PieceType.ROOK));
         validMoves.add(new ChessMove(startPosition, endPos, ChessPiece.PieceType.KNIGHT));
         validMoves.add(new ChessMove(startPosition, endPos, ChessPiece.PieceType.BISHOP));
         validMoves.add(new ChessMove(startPosition, endPos, ChessPiece.PieceType.QUEEN));
-        return validMoves;
     }
 }
