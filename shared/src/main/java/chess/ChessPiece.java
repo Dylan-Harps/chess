@@ -81,7 +81,28 @@ public class ChessPiece {
      * @return Collection of valid moves
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
-        PieceMovesCalculator calc = new PieceMovesCalculator(board, myPosition, this);
-        return calc.calculateMoves();
+        PieceMovesCalculator calc = null;
+        switch (type) {
+            case ChessPiece.PieceType.PAWN -> {
+                calc = new PawnMovesCalculator(board, myPosition, this);
+            }
+            case ChessPiece.PieceType.ROOK -> {
+                calc = new RookMovesCalculator(board, myPosition, this);
+            }
+            case ChessPiece.PieceType.KNIGHT -> {
+                calc = new KnightMovesCalculator(board, myPosition, this);
+            }
+            case ChessPiece.PieceType.BISHOP -> {
+                calc = new BishopMovesCalculator(board, myPosition, this);
+            }
+            case ChessPiece.PieceType.KING -> {
+                calc = new KingMovesCalculator(board, myPosition, this);
+            }
+            case ChessPiece.PieceType.QUEEN -> {
+                calc = new QueenMovesCalculator(board, myPosition, this);
+            }
+        }
+        if (calc != null) return calc.calculateMoves();
+        else return null;
     }
 }
