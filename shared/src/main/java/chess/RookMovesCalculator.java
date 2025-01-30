@@ -11,7 +11,7 @@ public class RookMovesCalculator extends PieceMovesCalculator {
 
     @Override
     public Collection<ChessMove> calculateMoves() {
-        List<ChessMove> validMoves = new ArrayList<ChessMove>();
+        List<ChessMove> validMoves = new ArrayList<>();
 
         goInDirection(validMoves, 1, 0); //go up
         goInDirection(validMoves, 0, 1); //go right

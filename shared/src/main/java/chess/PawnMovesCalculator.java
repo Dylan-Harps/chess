@@ -11,10 +11,10 @@ public class PawnMovesCalculator extends PieceMovesCalculator {
 
     @Override
     public Collection<ChessMove> calculateMoves() {
-        List<ChessMove> validMoves = new ArrayList<ChessMove>();
+        List<ChessMove> validMoves = new ArrayList<>();
 
         //look at the space in front of the pawn
-        ChessPosition frontSpace = new ChessPosition(startPosition.getRow() + forward(), startPosition.getColumn());
+        ChessPosition frontSpace = shiftOver(forward(1), 0);
         if (isEmpty(frontSpace)) {
             if (shouldPromote(frontSpace)) addPromotions(validMoves, frontSpace);
             else validMoves.add(new ChessMove(startPosition, frontSpace, null));
@@ -22,20 +22,20 @@ public class PawnMovesCalculator extends PieceMovesCalculator {
 
         //special case: the pawn can move 2 spaces if it hasn't moved yet
         if (isUnmovedPawn()) {
-            ChessPosition twoSpaces = new ChessPosition(startPosition.getRow() + (2 * forward()), startPosition.getColumn());
+            ChessPosition twoSpaces = shiftOver(forward(2), 0);
             if (isEmpty(frontSpace) && isEmpty(twoSpaces)) validMoves.add(new ChessMove(startPosition, twoSpaces, null));
         }
 
         //look at the space diagonal and to the left
-        ChessPosition leftCapture = new ChessPosition(frontSpace.getRow(), frontSpace.getColumn() - 1);
-        if (isInBounds(leftCapture) && !isEmpty(leftCapture) && isEnemy(leftCapture)) {
+        ChessPosition leftCapture = shiftOver(forward(1), -1);
+        if (isInBounds(leftCapture) && isEnemy(leftCapture)) {
             if (shouldPromote(leftCapture)) addPromotions(validMoves, leftCapture);
             else validMoves.add(new ChessMove(startPosition, leftCapture, null));
         }
 
         //look at the space diagonal and to the right
-        ChessPosition rightCapture = new ChessPosition(frontSpace.getRow(), frontSpace.getColumn() + 1);
-        if (isInBounds(rightCapture) && !isEmpty(rightCapture) && isEnemy(rightCapture)) {
+        ChessPosition rightCapture = shiftOver(forward(1), 1);
+        if (isInBounds(rightCapture) && isEnemy(rightCapture)) {
             if (shouldPromote(rightCapture)) addPromotions(validMoves, rightCapture);
             else validMoves.add(new ChessMove(startPosition, rightCapture, null));
         }
@@ -43,9 +43,11 @@ public class PawnMovesCalculator extends PieceMovesCalculator {
         return validMoves;
     }
 
-    private int forward() {
-        if (piece.getTeamColor() == ChessGame.TeamColor.WHITE) return 1;
-        else return -1;
+    private int forward(int amount) {
+        if (piece.getTeamColor() == ChessGame.TeamColor.BLACK) {
+            amount = -amount;
+        }
+        return amount;
     }
 
     private boolean shouldPromote(ChessPosition position) {

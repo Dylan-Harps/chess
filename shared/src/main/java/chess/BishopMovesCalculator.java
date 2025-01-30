@@ -11,7 +11,7 @@ public class BishopMovesCalculator extends PieceMovesCalculator {
 
     @Override
     public Collection<ChessMove> calculateMoves() {
-        List<ChessMove> validMoves = new ArrayList<ChessMove>();
+        List<ChessMove> validMoves = new ArrayList<>();
 
         goInDirection(validMoves, 1, 1); //go up and right
         goInDirection(validMoves, 1, -1); //go up and left

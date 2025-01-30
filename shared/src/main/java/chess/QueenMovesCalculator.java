@@ -11,12 +11,13 @@ public class QueenMovesCalculator extends PieceMovesCalculator {
 
     @Override
     public Collection<ChessMove> calculateMoves() {
-        List<ChessMove> validMoves = new ArrayList<ChessMove>();
+        List<ChessMove> validMoves = new ArrayList<>();
 
         goInDirection(validMoves, 1, 0); //go up
         goInDirection(validMoves, 0, 1); //go right
         goInDirection(validMoves, -1, 0); //go down
         goInDirection(validMoves, 0, -1); //go left
+
         goInDirection(validMoves, 1, 1); //go diagonal up and right
         goInDirection(validMoves, 1, -1); //go diagonal up and left
         goInDirection(validMoves, -1, 1); //go diagonal down and right
