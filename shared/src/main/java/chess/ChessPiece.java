@@ -59,7 +59,8 @@ public class ChessPiece {
         return type;
     }
 
-    public String printPiece() {
+    @Override
+    public String toString() {
         PieceType t = this.type;
         boolean isBlack = this.team == ChessGame.TeamColor.BLACK;
         switch (t) {
@@ -83,24 +84,12 @@ public class ChessPiece {
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
         PieceMovesCalculator calc = null;
         switch (type) {
-            case ChessPiece.PieceType.PAWN -> {
-                calc = new PawnMovesCalculator(board, myPosition, this);
-            }
-            case ChessPiece.PieceType.ROOK -> {
-                calc = new RookMovesCalculator(board, myPosition, this);
-            }
-            case ChessPiece.PieceType.KNIGHT -> {
-                calc = new KnightMovesCalculator(board, myPosition, this);
-            }
-            case ChessPiece.PieceType.BISHOP -> {
-                calc = new BishopMovesCalculator(board, myPosition, this);
-            }
-            case ChessPiece.PieceType.KING -> {
-                calc = new KingMovesCalculator(board, myPosition, this);
-            }
-            case ChessPiece.PieceType.QUEEN -> {
-                calc = new QueenMovesCalculator(board, myPosition, this);
-            }
+            case ChessPiece.PieceType.PAWN -> { calc = new PawnMovesCalculator(board, myPosition, this); }
+            case ChessPiece.PieceType.ROOK -> { calc = new RookMovesCalculator(board, myPosition, this); }
+            case ChessPiece.PieceType.KNIGHT -> { calc = new KnightMovesCalculator(board, myPosition, this); }
+            case ChessPiece.PieceType.BISHOP -> { calc = new BishopMovesCalculator(board, myPosition, this); }
+            case ChessPiece.PieceType.KING -> { calc = new KingMovesCalculator(board, myPosition, this); }
+            case ChessPiece.PieceType.QUEEN -> { calc = new QueenMovesCalculator(board, myPosition, this); }
         }
         if (calc != null) return calc.calculateMoves();
         else return null;

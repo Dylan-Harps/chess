@@ -1,10 +1,8 @@
 package chess;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
-public class PieceMovesCalculator {
+abstract public class PieceMovesCalculator {
     ChessPiece piece;
     ChessBoard board;
     ChessPosition startPosition;
@@ -15,9 +13,7 @@ public class PieceMovesCalculator {
         this.piece = piece;
     }
 
-    public Collection<ChessMove> calculateMoves() {
-        return null;
-    }
+    abstract public Collection<ChessMove> calculateMoves();
 
     protected boolean isInBounds(ChessPosition pos) {
         return pos.getRow() <= 8 && pos.getRow() >= 1 && pos.getColumn() <= 8 && pos.getColumn() >= 1;
@@ -27,13 +23,13 @@ public class PieceMovesCalculator {
         return board.getPiece(position) == null;
     }
 
-    protected boolean isEnemy(ChessPiece piece2) {
-        if (piece2 == null) return false;
-        return piece.getTeamColor() != piece2.getTeamColor();
+    protected boolean isEnemy(ChessPosition position) {
+        if (board.getPiece(position) == null) return false;
+        return piece.getTeamColor() != board.getPiece(position).getTeamColor();
     }
 
     protected boolean isValidSpace(ChessPosition position) {
-        return isInBounds(position) && (isEmpty(position) || isEnemy(board.getPiece(position)));
+        return isInBounds(position) && (isEmpty(position) || isEnemy(position));
     }
 
     protected void goInDirection(Collection<ChessMove> validMoves, int upward, int rightward) {
@@ -42,7 +38,7 @@ public class PieceMovesCalculator {
             ChessPosition currSpace = new ChessPosition(startPosition.getRow() + (i * upward), startPosition.getColumn() + (i * rightward));
             if (isValidSpace(currSpace)) validMoves.add(new ChessMove(startPosition, currSpace, null));
             else break;
-            if (isEnemy(board.getPiece(currSpace))) break;
+            if (isEnemy(currSpace)) break;
         }
     }
 }

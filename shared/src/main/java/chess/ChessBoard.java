@@ -97,10 +97,10 @@ public class ChessBoard {
     @Override
     public String toString() {
         StringBuilder out = new StringBuilder();
-        for (int r = 0; r < 8; ++r) {
-            for (int c = 0; c < 8; ++c) {
+        for (int r = 1; r <= 8; ++r) {
+            for (int c = 1; c <= 8; ++c) {
                 ChessPiece p = board[r-1][c-1];
-                out.append("|" + ((p == null) ? " " : p.printPiece()));
+                out.append("|" + ((p == null) ? " " : p.toString()));
             }
             out.append("|\n");
         }
