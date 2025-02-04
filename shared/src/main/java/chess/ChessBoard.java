@@ -68,7 +68,6 @@ public class ChessBoard {
      * (How the game of chess normally starts)
      */
     public void resetBoard() {
-        ChessGame.TeamColor color = ChessGame.TeamColor.WHITE;
         for (int row = 0; row < 8; ++row) {
             switch (row) {
                 case 0 -> { homeRow(row, ChessGame.TeamColor.WHITE); }
