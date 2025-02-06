@@ -53,9 +53,10 @@ public class ChessGame {
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
         if (board.getPiece(startPosition) == null) return null;
         Collection<ChessMove> validMoves = board.getPiece(startPosition).pieceMoves(board, startPosition);
-        //TODO: check if the move is valid
-        //first, check if moving the piece puts its king into check
-        //then, check if the enemy king is put into check
+        for (ChessMove m : validMoves) {
+            ChessBoard hypo = board.hypothetical(m);
+            if (isInCheck(hypo.getPiece(m.finalPos).getTeamColor())) validMoves.remove(m);
+        }
         return validMoves;
     }
 
@@ -66,9 +67,8 @@ public class ChessGame {
      * @throws InvalidMoveException if move is invalid
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
-        //TODO: throw an exception is move is invalid
-        board.addPiece(move.finalPos, board.getPiece(move.initialPos)); //move the piece to the new position
-        board.addPiece(move.initialPos, null); //get rid of the piece in the old position
+        if (!validMoves(move.initialPos).contains(move)) throw new InvalidMoveException();
+        board = board.hypothetical(move);
     }
 
     /**
@@ -78,6 +78,7 @@ public class ChessGame {
      * @return True if the specified team is in check
      */
     public boolean isInCheck(TeamColor teamColor) {
+        //TODO: actually implement this function
         return (teamColor == TeamColor.WHITE ? whiteInCheck : blackInCheck);
     }
 
