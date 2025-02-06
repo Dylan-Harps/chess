@@ -102,6 +102,26 @@ public class ChessBoard {
         }
     }
 
+    public boolean isInCheck(ChessGame.TeamColor teamColor) {
+        //go through every space on the board
+        for (int r = 1; r <= 8; ++r) {
+            for (int c = 1; c <= 8; ++c) {
+                //see if the space contains an enemy piece
+                ChessPiece p = this.getPiece(new ChessPosition(r, c));
+                if (p == null || p.getTeamColor() == teamColor) continue;
+                //see if the enemy is putting the king in check
+                var enemyMoves = p.pieceMoves(this, new ChessPosition(r, c));
+                for (ChessMove m : enemyMoves) {
+                    var target = this.getPiece(m.finalPos);
+                    if (target != null && target.getTeamColor() == teamColor && target.getPieceType() == ChessPiece.PieceType.KING) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
