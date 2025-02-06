@@ -14,7 +14,27 @@ public class ChessBoard {
     ChessPiece[][] board = new ChessPiece[8][8];
 
     public ChessBoard() {
-        //resetBoard();
+
+    }
+
+    public ChessBoard(ChessBoard b) {
+        for (int r = 1; r <= 8; ++r) {
+            for (int c = 1; c <= 8; ++c) {
+                board[r-1][c-1] = b.getPiece(new ChessPosition(r, c));
+            }
+        }
+    }
+
+    public ChessBoard hypothetical(ChessMove move) {
+        ChessBoard hypo = new ChessBoard(this);
+        if (hypo.getPiece(move.initialPos) != null) {
+            ChessPiece oldPiece = hypo.getPiece(move.initialPos);
+            ChessPiece.PieceType promotion = move.getPromotionPiece();
+            ChessPiece newPiece = new ChessPiece(oldPiece.getTeamColor(), promotion != null ? promotion : oldPiece.getPieceType());
+            hypo.addPiece(move.finalPos, newPiece);
+            hypo.addPiece(move.initialPos, null);
+        }
+        return hypo;
     }
 
     /**
