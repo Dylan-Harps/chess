@@ -12,8 +12,6 @@ import java.util.Collection;
 public class ChessGame {
     TeamColor activeTeam = TeamColor.WHITE;
     ChessBoard board;
-    boolean whiteInCheck = false;
-    boolean blackInCheck = false;
 
     public ChessGame() {
 
@@ -78,8 +76,23 @@ public class ChessGame {
      * @return True if the specified team is in check
      */
     public boolean isInCheck(TeamColor teamColor) {
-        //TODO: actually implement this function
-        return (teamColor == TeamColor.WHITE ? whiteInCheck : blackInCheck);
+        //go through every space on the board
+        for (int r = 1; r <= 8; ++r) {
+            for (int c = 1; c <= 8; ++c) {
+                //see if the space contains an enemy piece
+                ChessPiece p = board.getPiece(new ChessPosition(r, c));
+                if (p == null || p.getTeamColor() == teamColor) continue;
+                //see if the enemy is putting the king in check
+                var enemyMoves = validMoves(new ChessPosition(r, c));
+                for (ChessMove m : enemyMoves) {
+                    var target = board.getPiece(m.finalPos);
+                    if (target != null && target.getTeamColor() == teamColor && target.getPieceType() == ChessPiece.PieceType.KING) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private boolean hasValidMoves(TeamColor teamColor) {
