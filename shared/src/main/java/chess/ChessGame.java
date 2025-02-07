@@ -51,12 +51,12 @@ public class ChessGame {
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
         if (board.getPiece(startPosition) == null) return null;
         Collection<ChessMove> validMoves = board.getPiece(startPosition).pieceMoves(board, startPosition);
-        Collection<ChessMove> movesToRemove = new ArrayList<>();
+        Collection<ChessMove> invalidMoves = new ArrayList<>();
         for (ChessMove m : validMoves) {
             ChessBoard hypo = board.hypothetical(m);
-            if (hypo.isInCheck(hypo.getPiece(m.finalPos).getTeamColor())) movesToRemove.add(m);
+            if (hypo.isInCheck(hypo.getPiece(m.finalPos).getTeamColor())) invalidMoves.add(m);
         }
-        validMoves.removeAll(movesToRemove);
+        validMoves.removeAll(invalidMoves);
         return validMoves;
     }
 
@@ -67,10 +67,11 @@ public class ChessGame {
      * @throws InvalidMoveException if move is invalid
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
-        if (validMoves(move.initialPos) == null) throw new InvalidMoveException();
         if (board.getPiece(move.initialPos) == null) throw new InvalidMoveException();
+        if (validMoves(move.initialPos) == null) throw new InvalidMoveException();
         if (getTeamTurn() != board.getPiece(move.initialPos).getTeamColor()) throw new InvalidMoveException();
         if (!validMoves(move.initialPos).contains(move)) throw new InvalidMoveException();
+
         board = board.hypothetical(move);
         setTeamTurn(getTeamTurn() == TeamColor.WHITE ? TeamColor.BLACK : TeamColor.WHITE);
     }
@@ -86,8 +87,10 @@ public class ChessGame {
     }
 
     private boolean hasValidMoves(TeamColor teamColor) {
+        //go through every space on the board
         for (int r = 1; r <= 8; ++r) {
             for (int c = 1; c <= 8; ++c) {
+                //check if the piece at that space exists and if it has any legal moves
                 ChessPiece p = board.getPiece(new ChessPosition(r, c));
                 if (p == null || p.getTeamColor() != teamColor) continue;
                 if (!validMoves(new ChessPosition(r, c)).isEmpty()) {

@@ -34,6 +34,10 @@ public class ChessBoard {
             ChessPiece.PieceType promotion = move.getPromotionPiece();
             ChessPiece newPiece = new ChessPiece(oldPiece.getTeamColor(), promotion != null ? promotion : oldPiece.getPieceType());
 
+            //check for en passant
+            //check for castling
+
+            newPiece.setHasMoved();
             hypo.addPiece(move.finalPos, newPiece); //add piece to new position
             hypo.addPiece(move.initialPos, null); //remove piece from old position
         }
