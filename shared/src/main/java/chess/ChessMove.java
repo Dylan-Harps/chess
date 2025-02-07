@@ -2,6 +2,9 @@ package chess;
 
 import java.util.Objects;
 
+import static java.lang.Math.abs;
+import static java.lang.Math.max;
+
 /**
  * Represents moving a chess piece on a chessboard
  * <p>
@@ -43,6 +46,12 @@ public class ChessMove {
      */
     public ChessPiece.PieceType getPromotionPiece() {
         return promoteTo;
+    }
+
+    public int getLength() {
+        int rowDiff = (finalPos.row - initialPos.row) + (finalPos.col - initialPos.col);
+        int colDiff = (finalPos.row - initialPos.row) + (finalPos.col - initialPos.col);
+        return max(abs(rowDiff), abs(colDiff));
     }
 
     @Override

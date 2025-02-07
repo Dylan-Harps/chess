@@ -34,14 +34,41 @@ public class ChessBoard {
             ChessPiece.PieceType promotion = move.getPromotionPiece();
             ChessPiece newPiece = new ChessPiece(oldPiece.getTeamColor(), promotion != null ? promotion : oldPiece.getPieceType());
 
-            //check for en passant
-            //check for castling
+            //TODO: check for en passant
 
-            newPiece.setHasMoved();
-            hypo.addPiece(move.finalPos, newPiece); //add piece to new position
-            hypo.addPiece(move.initialPos, null); //remove piece from old position
+            //check for castling
+            if (oldPiece.getPieceType() == ChessPiece.PieceType.KING && move.getLength() == 2) {
+                ChessPiece rook;
+                ChessPosition rookStart;
+                ChessPosition rookEnd;
+                ChessMove rookMove;
+                //queenSide castling
+                if (move.finalPos.getColumn() == 3) {
+                    rookStart = new ChessPosition(move.initialPos.getRow(), 1);
+                    rookEnd = new ChessPosition(move.finalPos.getRow(), 4);
+                }
+                //kingSide castling
+                else {
+                    rookStart = new ChessPosition(move.initialPos.getRow(), 8);
+                    rookEnd = new ChessPosition(move.finalPos.getRow(), 6);
+                }
+                if (hypo.getPiece(rookStart) != null) {
+                    rook = new ChessPiece(hypo.getPiece(rookStart));
+                    rookMove = new ChessMove(rookStart, rookEnd, null);
+                    doMove(hypo, rook, rookMove);
+                }
+            }
+
+            doMove(hypo, new ChessPiece(newPiece), move);
         }
         return hypo;
+    }
+
+    private void doMove(ChessBoard board, ChessPiece piece, ChessMove move) {
+        if (piece == null) return;
+        piece.setHasMoved();
+        board.addPiece(move.finalPos, piece); //add piece to new position
+        board.addPiece(move.initialPos, null); //remove piece from old position
     }
 
     /**

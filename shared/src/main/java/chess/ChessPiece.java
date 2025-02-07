@@ -20,6 +20,12 @@ public class ChessPiece {
         this.type = type;
     }
 
+    public ChessPiece(ChessPiece that) {
+        this.team = that.getTeamColor();
+        this.type = that.getPieceType();
+        this.hasMoved = that.getHasMoved();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
