@@ -40,6 +40,17 @@ public class PawnMovesCalculator extends PieceMovesCalculator {
             else validMoves.add(new ChessMove(startPosition, rightCapture, null));
         }
 
+        //special case: en passant
+        ChessPosition leftSpace = shiftOver(0, -1);
+        ChessPosition rightSpace = shiftOver(0, 1);
+        boolean isInEnPassantRow = piece.getTeamColor() == ChessGame.TeamColor.WHITE ? startPosition.row == 5 : startPosition.row == 4;
+        if (isInEnPassantRow && isEnemy(leftSpace) && isEmpty(leftCapture) && board.getPiece(leftSpace).getDidDoubleMovedLastTurn()) {
+            validMoves.add(new ChessMove(startPosition, leftCapture, null));
+        }
+        if (isInEnPassantRow && isEnemy(rightSpace) && isEmpty(rightCapture) && board.getPiece(rightSpace).getDidDoubleMovedLastTurn()) {
+            validMoves.add(new ChessMove(startPosition, rightCapture, null));
+        }
+
         return validMoves;
     }
 

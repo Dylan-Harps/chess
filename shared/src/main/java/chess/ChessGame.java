@@ -85,8 +85,19 @@ public class ChessGame {
         if (getTeamTurn() != board.getPiece(move.initialPos).getTeamColor()) throw new InvalidMoveException();
         if (!validMoves(move.initialPos).contains(move)) throw new InvalidMoveException();
 
-        board = board.hypothetical(move);
-        setTeamTurn(getTeamTurn() == TeamColor.WHITE ? TeamColor.BLACK : TeamColor.WHITE);
+        //reset en passant for allied pieces (the opportunity to do so has passed)
+        for (int r = 1; r <= 8; ++r) {
+            for (int c = 1; c <= 8; ++c) {
+                ChessPiece piece = board.getPiece(new ChessPosition(r, c));
+                if (piece != null
+                        && piece.getPieceType() == ChessPiece.PieceType.PAWN
+                        && piece.getTeamColor() == getTeamTurn()) {
+                    piece.setDidDoubleMoveLastTurn(false);
+                }
+            }
+        }
+        board = board.hypothetical(move); //make the move
+        setTeamTurn(getTeamTurn() == TeamColor.WHITE ? TeamColor.BLACK : TeamColor.WHITE); //pass the turn
     }
 
     /**

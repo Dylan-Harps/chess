@@ -14,6 +14,7 @@ public class ChessPiece {
     ChessGame.TeamColor team;
     PieceType type;
     boolean hasMoved = false;
+    boolean didDoubleMovedLastTurn = false;
 
     public ChessPiece(ChessGame.TeamColor pieceColor, PieceType type) {
         team = pieceColor;
@@ -72,6 +73,14 @@ public class ChessPiece {
 
     public void setHasMoved() {
         hasMoved = true;
+    }
+
+    public boolean getDidDoubleMovedLastTurn() {
+        return didDoubleMovedLastTurn;
+    }
+
+    public void setDidDoubleMoveLastTurn(boolean didDoubleMove) {
+        didDoubleMovedLastTurn = didDoubleMove;
     }
 
     @Override

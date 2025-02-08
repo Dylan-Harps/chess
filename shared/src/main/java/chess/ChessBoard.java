@@ -28,40 +28,53 @@ public class ChessBoard {
 
     public ChessBoard hypothetical(ChessMove move) {
         ChessBoard hypo = new ChessBoard(this);
-        if (hypo.getPiece(move.initialPos) != null) {
-            //check if the PieceType changes due to promotion
-            ChessPiece oldPiece = hypo.getPiece(move.initialPos);
-            ChessPiece.PieceType promotion = move.getPromotionPiece();
-            ChessPiece newPiece = new ChessPiece(oldPiece.getTeamColor(), promotion != null ? promotion : oldPiece.getPieceType());
+        if (hypo.getPiece(move.initialPos) == null) return hypo;
 
-            //TODO: check for en passant
+        //check if the PieceType changes due to promotion
+        ChessPiece oldPiece = hypo.getPiece(move.initialPos);
+        ChessPiece.PieceType promotion = move.getPromotionPiece();
+        ChessPiece newPiece = new ChessPiece(oldPiece.getTeamColor(), promotion != null ? promotion : oldPiece.getPieceType());
 
-            //check for castling
-            if (oldPiece.getPieceType() == ChessPiece.PieceType.KING
-                    && move.getLength() == 2
-                    && !isInCheck(oldPiece.getTeamColor())) {
-                ChessPiece rook;
-                ChessPosition rookStart;
-                ChessPosition rookEnd;
-                ChessMove rookMove;
-                //queenSide castling
-                if (move.finalPos.getColumn() == 3) {
-                    rookStart = new ChessPosition(move.initialPos.getRow(), 1);
-                    rookEnd = new ChessPosition(move.finalPos.getRow(), 4);
-                }
-                //kingSide castling
-                else {
-                    rookStart = new ChessPosition(move.initialPos.getRow(), 8);
-                    rookEnd = new ChessPosition(move.finalPos.getRow(), 6);
-                }
-                if (hypo.getPiece(rookStart) != null) {
-                    rook = new ChessPiece(hypo.getPiece(rookStart));
-                    rookMove = new ChessMove(rookStart, rookEnd, null);
-                    doMove(hypo, rook, rookMove);
-                }
-            }
-            doMove(hypo, newPiece, move);
+        //if a pawn did a double-move, mark it as having done so
+        if (oldPiece.getPieceType() == ChessPiece.PieceType.PAWN
+                && move.getLength() == 2) {
+            newPiece.setDidDoubleMoveLastTurn(true);
         }
+
+        //check if a pawn captured en passant
+        if (oldPiece.getPieceType() == ChessPiece.PieceType.PAWN
+                && hypo.getPiece(move.finalPos) == null
+                && move.finalPos.getColumn() != move.initialPos.getColumn()) {
+            ChessPosition enemy = new ChessPosition(move.initialPos.getRow(), move.finalPos.getColumn());
+            hypo.addPiece(enemy, null);
+        }
+
+        //check for castling
+        if (oldPiece.getPieceType() == ChessPiece.PieceType.KING
+                && move.getLength() == 2
+                && !isInCheck(oldPiece.getTeamColor())) {
+            ChessPiece rook;
+            ChessPosition rookStart;
+            ChessPosition rookEnd;
+            ChessMove rookMove;
+            //queenSide castling
+            if (move.finalPos.getColumn() == 3) {
+                rookStart = new ChessPosition(move.initialPos.getRow(), 1);
+                rookEnd = new ChessPosition(move.finalPos.getRow(), 4);
+            }
+            //kingSide castling
+            else {
+                rookStart = new ChessPosition(move.initialPos.getRow(), 8);
+                rookEnd = new ChessPosition(move.finalPos.getRow(), 6);
+            }
+            if (hypo.getPiece(rookStart) != null) {
+                rook = new ChessPiece(hypo.getPiece(rookStart));
+                rookMove = new ChessMove(rookStart, rookEnd, null);
+                doMove(hypo, rook, rookMove);
+            }
+        }
+
+        doMove(hypo, newPiece, move);
         return hypo;
     }
 
