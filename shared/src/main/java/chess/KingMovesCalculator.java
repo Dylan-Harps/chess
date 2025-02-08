@@ -41,6 +41,7 @@ public class KingMovesCalculator extends PieceMovesCalculator {
                 validMoves.add(new ChessMove(startPosition, new ChessPosition(startPosition.getRow(), 7), null));
             }
         }
+
         return validMoves;
     }
 }

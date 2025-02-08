@@ -60,8 +60,7 @@ public class ChessBoard {
                     doMove(hypo, rook, rookMove);
                 }
             }
-
-            doMove(hypo, new ChessPiece(newPiece), move);
+            doMove(hypo, newPiece, move);
         }
         return hypo;
     }
