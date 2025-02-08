@@ -22,8 +22,8 @@ public class KingMovesCalculator extends PieceMovesCalculator {
         }
 
         //castling
-        //TODO: not only do the in-between spaces have to be empty, but they also can't put the king in check
-        if (!piece.getHasMoved()) {
+        boolean isInStartingPosition = startPosition.col == 5 && startPosition.row == (piece.getTeamColor() == ChessGame.TeamColor.WHITE ? 1 : 8);
+        if (!piece.getHasMoved() && isInStartingPosition) {
             ChessPiece rook;
             //queenSide
             rook = board.getPiece(new ChessPosition(startPosition.getRow(), 1));

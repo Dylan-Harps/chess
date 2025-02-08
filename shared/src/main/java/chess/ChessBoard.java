@@ -37,7 +37,9 @@ public class ChessBoard {
             //TODO: check for en passant
 
             //check for castling
-            if (oldPiece.getPieceType() == ChessPiece.PieceType.KING && move.getLength() == 2) {
+            if (oldPiece.getPieceType() == ChessPiece.PieceType.KING
+                    && move.getLength() == 2
+                    && !isInCheck(oldPiece.getTeamColor())) {
                 ChessPiece rook;
                 ChessPosition rookStart;
                 ChessPosition rookEnd;

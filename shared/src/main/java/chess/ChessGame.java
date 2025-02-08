@@ -53,8 +53,21 @@ public class ChessGame {
         Collection<ChessMove> validMoves = board.getPiece(startPosition).pieceMoves(board, startPosition);
         Collection<ChessMove> invalidMoves = new ArrayList<>();
         for (ChessMove m : validMoves) {
+            TeamColor team = board.getPiece(m.initialPos).getTeamColor();
             ChessBoard hypo = board.hypothetical(m);
-            if (hypo.isInCheck(hypo.getPiece(m.finalPos).getTeamColor())) invalidMoves.add(m);
+            if (hypo.isInCheck(team)) invalidMoves.add(m);
+            //check for invalid castling
+            if (board.getPiece(m.initialPos).getPieceType() == ChessPiece.PieceType.KING
+                    && m.getLength() == 2) {
+                //look at the in-between space
+                ChessPosition inBetween;
+                if (m.finalPos.getColumn() == 3) inBetween = new ChessPosition(m.initialPos.getRow(), 4);
+                else inBetween = new ChessPosition(m.initialPos.getRow(), 6);
+                //if the in-between space is in check, castling is invalid
+                ChessMove inBetweenMove = new ChessMove(m.initialPos, inBetween, null);
+                ChessBoard hypo2 = board.hypothetical(inBetweenMove);
+                if (hypo2.isInCheck(team)) invalidMoves.add(m);
+            }
         }
         validMoves.removeAll(invalidMoves);
         return validMoves;
