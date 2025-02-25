@@ -102,7 +102,12 @@ public class ChessGame {
             throw new InvalidMoveException();
         }
 
-        //reset en passant for allied pieces (the opportunity to get captured has passed)
+        resetEnPassant(); //reset en passant for allied pieces (the opportunity to get captured has passed)
+        board = board.hypothetical(move); //make the move
+        setTeamTurn(getTeamTurn() == TeamColor.WHITE ? TeamColor.BLACK : TeamColor.WHITE); //pass the turn
+    }
+
+    void resetEnPassant() {
         for (int r = 1; r <= 8; ++r) {
             for (int c = 1; c <= 8; ++c) {
                 ChessPiece piece = board.getPiece(new ChessPosition(r, c));
@@ -113,8 +118,6 @@ public class ChessGame {
                 }
             }
         }
-        board = board.hypothetical(move); //make the move
-        setTeamTurn(getTeamTurn() == TeamColor.WHITE ? TeamColor.BLACK : TeamColor.WHITE); //pass the turn
     }
 
     /**

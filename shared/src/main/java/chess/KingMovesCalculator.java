@@ -16,12 +16,7 @@ public class KingMovesCalculator extends PieceMovesCalculator {
         List<ChessMove> validMoves = new ArrayList<>();
 
         //normal movement
-        for (int[] s : spacesToCheck) {
-            ChessPosition currSpace = shiftOver(s[0], s[1]);
-            if (isValidSpace(currSpace)) {
-                validMoves.add(new ChessMove(startPosition, currSpace, null));
-            }
-        }
+        addMovesFromList(validMoves, spacesToCheck);
 
         //castling
         boolean isInStartingPosition = startPosition.col == 5 && startPosition.row == (piece.getTeamColor() == ChessGame.TeamColor.WHITE ? 1 : 8);

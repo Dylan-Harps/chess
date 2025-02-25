@@ -56,4 +56,13 @@ abstract public class PieceMovesCalculator {
             }
         }
     }
+
+    protected void addMovesFromList(Collection<ChessMove> validMoves, int[][] spacesToCheck) {
+        for (int[] s : spacesToCheck) {
+            ChessPosition currSpace = shiftOver(s[0], s[1]);
+            if (isValidSpace(currSpace)) {
+                validMoves.add(new ChessMove(startPosition, currSpace, null));
+            }
+        }
+    }
 }

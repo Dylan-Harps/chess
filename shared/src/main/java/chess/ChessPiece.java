@@ -14,7 +14,7 @@ public class ChessPiece {
     ChessGame.TeamColor team;
     PieceType type;
     boolean hasMoved = false;
-    boolean didDoubleMovedLastTurn = false;
+    boolean didDoubleMoveLastTurn = false;
 
     public ChessPiece(ChessGame.TeamColor pieceColor, PieceType type) {
         team = pieceColor;
@@ -67,6 +67,10 @@ public class ChessPiece {
         return type;
     }
 
+    public void setPieceType(PieceType type) {
+        this.type = type;
+    }
+
     public boolean getHasMoved() {
         return hasMoved;
     }
@@ -75,12 +79,12 @@ public class ChessPiece {
         hasMoved = true;
     }
 
-    public boolean getDidDoubleMovedLastTurn() {
-        return didDoubleMovedLastTurn;
+    public boolean getDidDoubleMoveLastTurn() {
+        return didDoubleMoveLastTurn;
     }
 
     public void setDidDoubleMoveLastTurn(boolean didDoubleMove) {
-        didDoubleMovedLastTurn = didDoubleMove;
+        didDoubleMoveLastTurn = didDoubleMove;
     }
 
     @Override

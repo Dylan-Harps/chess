@@ -14,12 +14,7 @@ public class KnightMovesCalculator extends PieceMovesCalculator {
     @Override
     public Collection<ChessMove> calculateMoves() {
         List<ChessMove> validMoves = new ArrayList<>();
-        for (int[] s : spacesToCheck) {
-            ChessPosition currSpace = shiftOver(s[0], s[1]);
-            if (isValidSpace(currSpace)) {
-                validMoves.add(new ChessMove(startPosition, currSpace, null));
-            }
-        }
+        addMovesFromList(validMoves, spacesToCheck);
         return validMoves;
     }
 }

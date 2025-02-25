@@ -13,65 +13,60 @@ public class PawnMovesCalculator extends PieceMovesCalculator {
     public Collection<ChessMove> calculateMoves() {
         List<ChessMove> validMoves = new ArrayList<>();
 
-        //look at the space in front of the pawn
-        ChessPosition frontSpace = shiftOver(forward(1), 0);
-        if (isEmpty(frontSpace)) {
-            if (shouldPromote(frontSpace)) {
-                addPromotions(validMoves, frontSpace);
-            }
-            else {
-                validMoves.add(new ChessMove(startPosition, frontSpace, null));
-            }
-        }
+        forwardMove(validMoves); //look at the space in front of the pawn
+        doubleMove(validMoves); //special case: the pawn can move 2 spaces if it hasn't moved yet
+        captureMove(validMoves, shiftOver(forward(1), -1)); //look at the space diagonal and to the left
+        captureMove(validMoves, shiftOver(forward(1), 1)); //look at the space diagonal and to the right
+        enPassantMove(validMoves, -1); //en passant left
+        enPassantMove(validMoves, 1); //en passant right
 
-        //special case: the pawn can move 2 spaces if it hasn't moved yet
-        if (isUnmovedPawn()) {
+        return validMoves;
+    }
+
+    void forwardMove(Collection<ChessMove> validMoves) {
+        ChessPosition frontSpace = shiftOver(forward(1), 0);
+        if (isEmpty(frontSpace) && !promotionMove(validMoves, frontSpace)) {
+            validMoves.add(new ChessMove(startPosition, frontSpace, null));
+        }
+    }
+
+    void doubleMove(Collection<ChessMove> validMoves) {
+        boolean isInStartingRow = startPosition.row == (piece.getTeamColor() == ChessGame.TeamColor.WHITE ? 2 : 7);
+        if (isInStartingRow) {
             ChessPosition twoSpaces = shiftOver(forward(2), 0);
-            if (isEmpty(frontSpace) && isEmpty(twoSpaces)) {
+            if (isEmpty(shiftOver(forward(1), 0)) && isEmpty(twoSpaces)) {
                 validMoves.add(new ChessMove(startPosition, twoSpaces, null));
             }
         }
+    }
 
-        //look at the space diagonal and to the left
-        ChessPosition leftCapture = shiftOver(forward(1), -1);
-        if (isInBounds(leftCapture) && isEnemy(leftCapture)) {
-            if (shouldPromote(leftCapture)) {
-                addPromotions(validMoves, leftCapture);
-            }
-            else {
-                validMoves.add(new ChessMove(startPosition, leftCapture, null));
-            }
+    void captureMove(Collection<ChessMove> validMoves, ChessPosition captureSpace) {
+        if (isInBounds(captureSpace) && isEnemy(captureSpace) && !promotionMove(validMoves, captureSpace)) {
+            validMoves.add(new ChessMove(startPosition, captureSpace, null));
         }
+    }
 
-        //look at the space diagonal and to the right
-        ChessPosition rightCapture = shiftOver(forward(1), 1);
-        if (isInBounds(rightCapture) && isEnemy(rightCapture)) {
-            if (shouldPromote(rightCapture)) {
-                addPromotions(validMoves, rightCapture);
-            }
-            else {
-                validMoves.add(new ChessMove(startPosition, rightCapture, null));
-            }
-        }
-
-        //special case: en passant
-        ChessPosition leftSpace = shiftOver(0, -1);
-        ChessPosition rightSpace = shiftOver(0, 1);
+    void enPassantMove(Collection<ChessMove> validMoves, int rightwards) {
+        ChessPosition sideSpace = shiftOver(0, rightwards);
+        ChessPosition diagonal = shiftOver(forward(1), rightwards);
         boolean isInEnPassantRow = startPosition.row == (piece.getTeamColor() == ChessGame.TeamColor.WHITE ? 5 : 4);
         if (isInEnPassantRow
-                && isEnemy(leftSpace)
-                && isEmpty(leftCapture)
-                && board.getPiece(leftSpace).getDidDoubleMovedLastTurn()) {
-            validMoves.add(new ChessMove(startPosition, leftCapture, null));
+                && isEnemy(sideSpace)
+                && isEmpty(diagonal)
+                && board.getPiece(sideSpace).getDidDoubleMoveLastTurn()) {
+            validMoves.add(new ChessMove(startPosition, diagonal, null));
         }
-        if (isInEnPassantRow
-                && isEnemy(rightSpace)
-                && isEmpty(rightCapture)
-                && board.getPiece(rightSpace).getDidDoubleMovedLastTurn()) {
-            validMoves.add(new ChessMove(startPosition, rightCapture, null));
-        }
+    }
 
-        return validMoves;
+    boolean promotionMove(Collection<ChessMove> validMoves, ChessPosition position) {
+        if (position.getRow() == (piece.getTeamColor() == ChessGame.TeamColor.WHITE ? 8 : 1)) {
+            validMoves.add(new ChessMove(startPosition, position, ChessPiece.PieceType.ROOK));
+            validMoves.add(new ChessMove(startPosition, position, ChessPiece.PieceType.KNIGHT));
+            validMoves.add(new ChessMove(startPosition, position, ChessPiece.PieceType.BISHOP));
+            validMoves.add(new ChessMove(startPosition, position, ChessPiece.PieceType.QUEEN));
+            return true;
+        }
+        return false;
     }
 
     private int forward(int amount) {
@@ -79,30 +74,5 @@ public class PawnMovesCalculator extends PieceMovesCalculator {
             amount = -amount;
         }
         return amount;
-    }
-
-    private boolean shouldPromote(ChessPosition position) {
-        if (piece.getTeamColor() == ChessGame.TeamColor.WHITE) {
-            return position.getRow() == 8;
-        }
-        else {
-            return position.getRow() == 1;
-        }
-    }
-
-    private boolean isUnmovedPawn() {
-        if (piece.getTeamColor() == ChessGame.TeamColor.WHITE) {
-            return startPosition.getRow() == 2;
-        }
-        else {
-            return startPosition.getRow() == 7;
-        }
-    }
-
-    private void addPromotions(Collection<ChessMove> validMoves, ChessPosition position) {
-        validMoves.add(new ChessMove(startPosition, position, ChessPiece.PieceType.ROOK));
-        validMoves.add(new ChessMove(startPosition, position, ChessPiece.PieceType.KNIGHT));
-        validMoves.add(new ChessMove(startPosition, position, ChessPiece.PieceType.BISHOP));
-        validMoves.add(new ChessMove(startPosition, position, ChessPiece.PieceType.QUEEN));
     }
 }

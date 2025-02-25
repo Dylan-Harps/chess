@@ -34,8 +34,10 @@ public class ChessBoard {
 
         //check if the PieceType changes due to promotion
         ChessPiece oldPiece = hypo.getPiece(move.initialPos);
-        ChessPiece.PieceType promotion = move.getPromotionPiece();
-        ChessPiece newPiece = new ChessPiece(oldPiece.getTeamColor(), promotion != null ? promotion : oldPiece.getPieceType());
+        ChessPiece newPiece = new ChessPiece(oldPiece);
+        if (move.getPromotionPiece() != null) {
+            newPiece.setPieceType(move.getPromotionPiece());
+        }
 
         //if a pawn did a double-move, mark it as having done so
         if (oldPiece.getPieceType() == ChessPiece.PieceType.PAWN
@@ -55,23 +57,12 @@ public class ChessBoard {
         if (oldPiece.getPieceType() == ChessPiece.PieceType.KING
                 && move.getLength() == 2
                 && !isInCheck(oldPiece.getTeamColor())) {
-            ChessPiece rook;
-            ChessPosition rookStart;
-            ChessPosition rookEnd;
-            ChessMove rookMove;
-            //queenSide castling
-            if (move.finalPos.getColumn() == 3) {
-                rookStart = new ChessPosition(move.initialPos.getRow(), 1);
-                rookEnd = new ChessPosition(move.finalPos.getRow(), 4);
-            }
-            //kingSide castling
-            else {
-                rookStart = new ChessPosition(move.initialPos.getRow(), 8);
-                rookEnd = new ChessPosition(move.finalPos.getRow(), 6);
-            }
+            boolean isQueenSide = move.finalPos.getColumn() == 3;
+            ChessPosition rookStart = new ChessPosition(move.initialPos.getRow(), (isQueenSide ? 1 : 8));
+            ChessPosition rookEnd = new ChessPosition(move.finalPos.getRow(), (isQueenSide ? 4 : 6));
             if (hypo.getPiece(rookStart) != null) {
-                rook = new ChessPiece(hypo.getPiece(rookStart));
-                rookMove = new ChessMove(rookStart, rookEnd, null);
+                ChessPiece rook = new ChessPiece(hypo.getPiece(rookStart));
+                ChessMove rookMove = new ChessMove(rookStart, rookEnd, null);
                 doMove(hypo, rook, rookMove);
             }
         }
