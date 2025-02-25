@@ -16,7 +16,10 @@ abstract public class PieceMovesCalculator {
     abstract public Collection<ChessMove> calculateMoves();
 
     protected boolean isInBounds(ChessPosition position) {
-        return position.getRow() >= 1 && position.getRow() <= 8 && position.getColumn() >= 1 && position.getColumn() <= 8;
+        return  position.getRow() >= 1
+                && position.getRow() <= 8
+                && position.getColumn() >= 1
+                && position.getColumn() <= 8;
     }
 
     protected boolean isEmpty(ChessPosition position) {
@@ -24,7 +27,9 @@ abstract public class PieceMovesCalculator {
     }
 
     protected boolean isEnemy(ChessPosition position) {
-        if (isEmpty(position)) return false;
+        if (isEmpty(position)) {
+            return false;
+        }
         return piece.getTeamColor() != board.getPiece(position).getTeamColor();
     }
 
@@ -40,9 +45,15 @@ abstract public class PieceMovesCalculator {
         //upward and rightward should be -1, 0, or 1. Go in the indicated direction and add all valid moves
         for (int i = 1; i <= 8; ++i) {
             ChessPosition currSpace = shiftOver(i * upward, i * rightward);
-            if (isValidSpace(currSpace)) validMoves.add(new ChessMove(startPosition, currSpace, null));
-            else break;
-            if (isEnemy(currSpace)) break;
+            if (isValidSpace(currSpace)) {
+                validMoves.add(new ChessMove(startPosition, currSpace, null));
+            }
+            else {
+                break;
+            }
+            if (isEnemy(currSpace)) {
+                break;
+            }
         }
     }
 }

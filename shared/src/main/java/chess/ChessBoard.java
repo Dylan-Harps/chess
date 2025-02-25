@@ -28,7 +28,9 @@ public class ChessBoard {
 
     public ChessBoard hypothetical(ChessMove move) {
         ChessBoard hypo = new ChessBoard(this);
-        if (hypo.getPiece(move.initialPos) == null) return hypo;
+        if (hypo.getPiece(move.initialPos) == null) {
+            return hypo;
+        }
 
         //check if the PieceType changes due to promotion
         ChessPiece oldPiece = hypo.getPiece(move.initialPos);
@@ -79,7 +81,9 @@ public class ChessBoard {
     }
 
     private void doMove(ChessBoard board, ChessPiece piece, ChessMove move) {
-        if (piece == null) return;
+        if (piece == null) {
+            return;
+        }
         piece.setHasMoved();
         board.addPiece(move.finalPos, piece); //add piece to new position
         board.addPiece(move.initialPos, null); //remove piece from old position
@@ -92,7 +96,12 @@ public class ChessBoard {
      * @param piece    the piece to add
      */
     public void addPiece(ChessPosition position, ChessPiece piece) {
-        if (position.getRow() > 8 || position.getRow() < 1 || position.getColumn() > 8 || position.getColumn() < 1) return;
+        if (position.getRow() > 8
+                || position.getRow() < 1
+                || position.getColumn() > 8
+                || position.getColumn() < 1) {
+            return;
+        }
         board[position.getRow()-1][position.getColumn()-1] = piece;
     }
 
@@ -104,7 +113,12 @@ public class ChessBoard {
      * position
      */
     public ChessPiece getPiece(ChessPosition position) {
-        if (position.getRow() > 8 || position.getRow() < 1 || position.getColumn() > 8 || position.getColumn() < 1) return null;
+        if (position.getRow() > 8
+                || position.getRow() < 1
+                || position.getColumn() > 8
+                || position.getColumn() < 1) {
+            return null;
+        }
         return board[position.getRow()-1][position.getColumn()-1];
     }
 
@@ -138,11 +152,11 @@ public class ChessBoard {
     public void resetBoard() {
         for (int row = 0; row < 8; ++row) {
             switch (row) {
-                case 0 -> { homeRow(row, ChessGame.TeamColor.WHITE); }
-                case 1 -> { pawnRow(row, ChessGame.TeamColor.WHITE); }
-                case 6 -> { pawnRow(row, ChessGame.TeamColor.BLACK); }
-                case 7 -> { homeRow(row, ChessGame.TeamColor.BLACK); }
-                default -> { clearRow(row); }
+                case 0 -> homeRow(row, ChessGame.TeamColor.WHITE);
+                case 1 -> pawnRow(row, ChessGame.TeamColor.WHITE);
+                case 6 -> pawnRow(row, ChessGame.TeamColor.BLACK);
+                case 7 -> homeRow(row, ChessGame.TeamColor.BLACK);
+                default -> clearRow(row);
             }
         }
     }
@@ -153,12 +167,16 @@ public class ChessBoard {
             for (int c = 1; c <= 8; ++c) {
                 //see if the space contains an enemy piece
                 ChessPiece p = this.getPiece(new ChessPosition(r, c));
-                if (p == null || p.getTeamColor() == teamColor) continue;
+                if (p == null || p.getTeamColor() == teamColor) {
+                    continue;
+                }
                 //see if the enemy is putting the king in check
                 var enemyMoves = p.pieceMoves(this, new ChessPosition(r, c));
                 for (ChessMove m : enemyMoves) {
                     var target = this.getPiece(m.finalPos);
-                    if (target != null && target.getTeamColor() == teamColor && target.getPieceType() == ChessPiece.PieceType.KING) {
+                    if (target != null
+                            && target.getTeamColor() == teamColor
+                            && target.getPieceType() == ChessPiece.PieceType.KING) {
                         return true;
                     }
                 }

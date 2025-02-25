@@ -16,7 +16,9 @@ public class KnightMovesCalculator extends PieceMovesCalculator {
         List<ChessMove> validMoves = new ArrayList<>();
         for (int[] s : spacesToCheck) {
             ChessPosition currSpace = shiftOver(s[0], s[1]);
-            if (isValidSpace(currSpace)) validMoves.add(new ChessMove(startPosition, currSpace, null));
+            if (isValidSpace(currSpace)) {
+                validMoves.add(new ChessMove(startPosition, currSpace, null));
+            }
         }
         return validMoves;
     }

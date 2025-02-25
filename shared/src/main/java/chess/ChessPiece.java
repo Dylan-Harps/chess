@@ -115,7 +115,11 @@ public class ChessPiece {
             case ChessPiece.PieceType.KING -> { calc = new KingMovesCalculator(board, myPosition, this); }
             case ChessPiece.PieceType.QUEEN -> { calc = new QueenMovesCalculator(board, myPosition, this); }
         }
-        if (calc != null) return calc.calculateMoves();
-        else return null;
+        if (calc != null) {
+            return calc.calculateMoves();
+        }
+        else {
+            return null;
+        }
     }
 }
