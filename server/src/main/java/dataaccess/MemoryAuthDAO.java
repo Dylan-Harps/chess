@@ -1,20 +1,20 @@
 package dataaccess;
 
 import model.AuthData;
-import model.UserData;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MemoryAuthDAO implements AuthDAO {
-    List<AuthData> authDatabase;
+    List<AuthData> authDatabase = new ArrayList<>();
 
-    public AuthData getAuth(String authToken) {
+    public AuthData getAuth(String authToken) throws DataAccessException {
         for (AuthData a : authDatabase) {
             if (a.authToken().equals(authToken)) {
                 return a;
             }
         }
-        return null;
+        throw new DataAccessException("Error: Cannot access nonexistent authData");
     }
 
     /*
@@ -27,7 +27,7 @@ public class MemoryAuthDAO implements AuthDAO {
         authDatabase.add(authData);
     }
 
-    public void deleteAuth(String authToken) {
+    public void deleteAuth(String authToken) throws DataAccessException {
         authDatabase.remove(getAuth(authToken));
     }
 

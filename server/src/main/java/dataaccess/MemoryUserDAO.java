@@ -3,18 +3,19 @@ package dataaccess;
 import model.AuthData;
 import model.UserData;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MemoryUserDAO implements UserDAO {
-    List<UserData> userDatabase;
+    List<UserData> userDatabase = new ArrayList<>();
 
-    public UserData getUser(String username) {
+    public UserData getUser(String username)  throws DataAccessException {
         for (UserData u : userDatabase) {
             if (u.username().equals(username)) {
                 return u;
             }
         }
-        return null;
+        throw new DataAccessException("Error: Cannot access nonexistent userData");
     }
 
     public void createUser(UserData userData) {
