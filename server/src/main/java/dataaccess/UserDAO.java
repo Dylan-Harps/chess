@@ -8,7 +8,5 @@ public interface UserDAO {
 
     public void createUser(UserData userData);
 
-    public AuthData authenticateUser(String username);
-
     public void clearAllUserData();
 }

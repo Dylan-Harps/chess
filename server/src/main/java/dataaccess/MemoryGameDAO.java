@@ -2,26 +2,43 @@ package dataaccess;
 
 import model.GameData;
 
+import java.util.Collection;
+import java.util.List;
+
 public class MemoryGameDAO implements GameDAO {
-    public GameData getGame(String gameID) {
-        //TODO
+    List<GameData> gameDatabase;
+
+    public GameData getGame(int gameID) {
+        for (GameData g : gameDatabase) {
+            if (g.gameID() == gameID) {
+                return g;
+            }
+        }
         return null;
+    }
+
+    public Collection<GameData> listGames() {
+        return gameDatabase;
     }
 
     public void createGame(GameData gameData) {
-        //TODO
+        gameDatabase.add(gameData);
     }
 
-    public void deleteGame(String gameID) {
-        //TODO
+    public void deleteGame(int gameID) {
+        gameDatabase.remove(getGame(gameID));
     }
 
     public GameData updateGame(GameData gameData) {
-        //TODO
-        return null;
+        GameData old = getGame(gameData.gameID());
+        if (old != null) {
+            gameDatabase.remove(old);
+        }
+        createGame(gameData);
+        return gameData;
     }
 
     public void clearAllGameData() {
-        //TODO
+        gameDatabase.clear();
     }
 }
