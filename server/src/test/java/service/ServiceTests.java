@@ -1,32 +1,12 @@
 package service;
 
-import chess.ChessGame;
-import dataaccess.DataAccessException;
 import org.junit.jupiter.api.*;
 import passoff.model.*;
 import passoff.server.TestServerFacade;
 import server.Server;
 
-import java.net.HttpURLConnection;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Locale;
-
-import service.UserService;
-
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class APITests {
-
-    private static TestUser existingUser;
-
-    private static TestUser newUser;
-
-    private static TestCreateRequest createRequest;
-
-    private static TestServerFacade serverFacade;
-    private static Server server;
-
-    private String existingAuth;
+public class ServiceTests {
 
     @Test
     @Order(1)
@@ -47,7 +27,7 @@ public class APITests {
         UserService userService = new UserService();
         RegisterRequest request = new RegisterRequest("", "myPassword", "myEmail@email.com");
 
-        Assertions.assertThrows(RuntimeException.class, () -> userService.register(request), "register: does not throw error");
+        Assertions.assertThrows(RuntimeException.class, () -> userService.register(request), "register: does not throw bad request");
     }
 
     @Test
@@ -57,6 +37,19 @@ public class APITests {
         UserService userService = new UserService();
         RegisterRequest request = new RegisterRequest(null, "myPassword", "myEmail@email.com");
 
-        Assertions.assertThrows(RuntimeException.class, () -> userService.register(request), "register: does not throw error");
+        Assertions.assertThrows(RuntimeException.class, () -> userService.register(request), "register: does not throw bad request");
+    }
+
+    @Test
+    @Order(4)
+    @DisplayName("Register Username Already Taken")
+    public void registerUsernameAlreadyTaken() {
+        UserService userService = new UserService();
+        RegisterRequest request1 = new RegisterRequest("myUsername", "myPassword", "myEmail@email.com");
+        RegisterResult result1 = userService.register(request1);
+
+        RegisterRequest request2 = new RegisterRequest("myUsername", "myPassword2", "myEmail2@email.com");
+
+        Assertions.assertThrows(RuntimeException.class, () -> userService.register(request2), "register: does not throw already taken");
     }
 }

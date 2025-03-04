@@ -1,5 +1,11 @@
 package server;
 
+import com.google.gson.Gson;
+import handler.ChessHandler;
+import handler.ResponseException;
+import service.RegisterRequest;
+import service.RegisterResult;
+import service.UserService;
 import spark.*;
 
 //endpoints:
@@ -14,6 +20,9 @@ import spark.*;
 // 7. clear. null. return null
 
 public class Server {
+    private final ChessHandler handler = new ChessHandler();
+    private final UserService userService = new UserService();
+    //private final GameService gameService = new GameService();
 
     public int run(int desiredPort) {
         Spark.port(desiredPort);
@@ -23,10 +32,30 @@ public class Server {
         // Register your endpoints and handle exceptions here.
 
         //This line initializes the server and can be removed once you have a functioning endpoint 
-        Spark.init();
+        Spark.webSocket("/ws", handler);
+
+        Spark.post("/user", this::register);
+        //Spark.post("/session", this::login);
+        //Spark.delete("/session", this::logout);
+        //Spark.get("/game", this::listGames);
+        //Spark.post("/game", this::createGame);
+        //Spark.put("/game", this::joinGame);
+        //Spark.delete("/db", this::clear);
+        Spark.exception(ResponseException.class, this::exceptionHandler);
 
         Spark.awaitInitialization();
         return Spark.port();
+    }
+
+    private void exceptionHandler(ResponseException ex, Request req, Response res) {
+        res.status(ex.Status());
+        res.body(ex.toJson());
+    }
+
+    private Object register(Request request, Response response) throws ResponseException {
+        RegisterRequest registerRequest = new Gson().fromJson(request.body(), RegisterRequest.class);
+        RegisterResult registerResult = handler.register(registerRequest);
+        return new Gson().toJson(registerResult);
     }
 
     public void stop() {

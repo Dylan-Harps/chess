@@ -15,7 +15,7 @@ public class UserService {
         return UUID.randomUUID().toString();
     }
 
-    public RegisterResult register(RegisterRequest registerRequest) {
+    public RegisterResult register(RegisterRequest registerRequest) throws RuntimeException {
         //if registerRequest is missing data, throw error 400 "bad request"
         if (registerRequest.username() == null
                 || registerRequest.username().isEmpty()
