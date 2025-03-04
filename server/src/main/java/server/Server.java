@@ -27,8 +27,8 @@ public class Server {
         Spark.post("/session", this::login);
         Spark.delete("/session", this::logout);
         Spark.get("/game", this::listGames);
-        //Spark.post("/game", this::createGame);
-        //Spark.put("/game", this::joinGame);
+        Spark.post("/game", this::createGame);
+        Spark.put("/game", this::joinGame);
         Spark.delete("/db", this::clear);
         Spark.exception(ResponseException.class, this::exceptionHandler);
 
@@ -65,6 +65,22 @@ public class Server {
         ListGamesRequest listGamesRequest = new ListGamesRequest(authToken);
         ListGamesResult listGamesResult = handler.listGames(listGamesRequest);
         return new Gson().toJson(listGamesResult);
+    }
+
+    private Object createGame(Request request, Response response) throws ResponseException {
+        String authToken = request.headers("authorization");
+        CreateGameRequest temp = new Gson().fromJson(request.body(), CreateGameRequest.class);
+        CreateGameRequest createGameRequest = new CreateGameRequest(authToken, temp.gameName());
+        CreateGameResult createGameResult = handler.createGame(createGameRequest);
+        return new Gson().toJson(createGameResult);
+    }
+
+    private Object joinGame(Request request, Response response) throws ResponseException {
+        String authToken = request.headers("authorization");
+        JoinGameRequest temp = new Gson().fromJson(request.body(), JoinGameRequest.class);
+        JoinGameRequest joinGameRequest = new JoinGameRequest(authToken, temp.color(), temp.gameID());
+        JoinGameResult joinGameResult = handler.joinGame(joinGameRequest);
+        return new Gson().toJson(joinGameResult);
     }
 
     private Object clear(Request request, Response response) throws ResponseException {

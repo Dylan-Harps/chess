@@ -1,11 +1,13 @@
 package service;
 
+import chess.ChessGame;
 import dataaccess.DataAccessException;
 import dataaccess.MemoryAuthDAO;
 import dataaccess.MemoryGameDAO;
 import dataaccess.MemoryUserDAO;
 import handler.ResponseException;
 import model.AuthData;
+import model.GameData;
 import model.UserData;
 
 import java.util.UUID;
@@ -17,6 +19,12 @@ public class ChessService {
 
     public static String generateToken() {
         return UUID.randomUUID().toString();
+    }
+
+    int id = 0;
+    public static int generateGameID() {
+        int id = 0;
+        return id++;
     }
 
     public RegisterResult register(RegisterRequest request) throws ResponseException {
@@ -113,6 +121,86 @@ public class ChessService {
         return new ListGamesResult(gameDatabase.listGames());
     }
 
+    public CreateGameResult createGame(CreateGameRequest request) throws ResponseException {
+        //if the request is missing data, throw an exception
+        if (request.authToken() == null
+                || request.authToken().isEmpty()
+                || request.gameName() == null
+                || request.gameName().isEmpty()) {
+            throw new ResponseException(400, "bad request");
+        }
+
+        //check if logged in
+        AuthData authData;
+        try {
+            authData = authDataBase.getAuth(request.authToken());
+        } catch (DataAccessException e) {
+            throw new ResponseException(401, "unauthorized");
+        }
+
+        //create the game
+        GameData gameData = new GameData(generateGameID(), authData.username(), null, request.gameName(), new ChessGame());
+        gameDatabase.createGame(gameData);
+
+        return new CreateGameResult(gameData.gameID());
+    }
+
+    public JoinGameResult joinGame(JoinGameRequest request) throws ResponseException {
+        //if the request is missing data, throw an exception
+        if (request.authToken() == null
+                || request.authToken().isEmpty()
+                || request.color() == null
+                || request.color().isEmpty()) {
+            throw new ResponseException(400, "bad request");
+        }
+
+        //check if logged in
+        AuthData authData;
+        try {
+            authData = authDataBase.getAuth(request.authToken());
+        } catch (DataAccessException e) {
+            throw new ResponseException(401, "unauthorized");
+        }
+
+        //check if game exists
+        GameData gameData;
+        try {
+            gameData = gameDatabase.getGame(request.gameID());
+        } catch (DataAccessException e) {
+            throw new ResponseException(500, e.getMessage());
+        }
+
+        //figure out which color is wanted
+        boolean isWhite;
+        if (request.color().equals("WHITE")) {
+            isWhite = true;
+        } else if (request.color().equals("BLACK")) {
+            isWhite = false;
+        } else throw new ResponseException(400, "bad request");
+
+        //check if already taken
+        if (isWhite && gameData.whiteUsername() != null) {
+            throw new ResponseException(403, "already taken");
+        } else if (!isWhite && gameData.blackUsername() != null) {
+            throw new ResponseException(403, "already taken");
+        }
+
+        //join the game
+        GameData update;
+        if (isWhite) {
+            update = new GameData(gameData.gameID(), authData.username(), gameData.blackUsername(), gameData.gameName(), gameData.game());
+        } else {
+            update = new GameData(gameData.gameID(), gameData.whiteUsername(), authData.username(), gameData.gameName(), gameData.game());
+        }
+        try {
+            gameDatabase.deleteGame(gameData.gameID());
+            gameDatabase.createGame(update);
+        } catch (DataAccessException e) {
+            throw new ResponseException(500, e.getMessage());
+        }
+
+        return new JoinGameResult();
+    }
 
     public ClearResult clear(ClearRequest request) {
         userDataBase.clearAllUserData();

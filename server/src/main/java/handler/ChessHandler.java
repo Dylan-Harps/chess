@@ -23,6 +23,14 @@ public class ChessHandler {
         return chessService.listGames(request);
     }
 
+    public CreateGameResult createGame(CreateGameRequest request) throws ResponseException {
+        return chessService.createGame(request);
+    }
+
+    public JoinGameResult joinGame(JoinGameRequest request) throws ResponseException {
+        return chessService.joinGame(request);
+    }
+
     public ClearResult clear(ClearRequest request) {
         return chessService.clear(request);
     }
