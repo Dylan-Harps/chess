@@ -6,16 +6,7 @@ import handler.ResponseException;
 import service.*;
 import spark.*;
 
-//endpoints:
-// 1. register. username, email, password. return username, authToken
-// 2. login. username, password. return username, authToken
-// 3. logout. authToken. return null
-
-// 4. listGames. authToken. return list of games
-// 5. createGame. authToken, gameName. return gameID
-// 6. joinGame. authToken, gameName. return gameID
-
-// 7. clear. null. return null
+import java.util.List;
 
 public class Server {
     private final ChessHandler handler = new ChessHandler();
@@ -35,10 +26,10 @@ public class Server {
         Spark.post("/user", this::register);
         Spark.post("/session", this::login);
         Spark.delete("/session", this::logout);
-        //Spark.get("/game", this::listGames);
+        Spark.get("/game", this::listGames);
         //Spark.post("/game", this::createGame);
         //Spark.put("/game", this::joinGame);
-        //Spark.delete("/db", this::clear);
+        Spark.delete("/db", this::clear);
         Spark.exception(ResponseException.class, this::exceptionHandler);
 
         Spark.awaitInitialization();
@@ -63,11 +54,22 @@ public class Server {
     }
 
     private Object logout(Request request, Response response) throws ResponseException {
-        String authToken = request.params(":authToken"); //FIXME doesn't work and I have no idea why
-
+        String authToken = request.headers("authorization");
         LogoutRequest logoutRequest = new LogoutRequest(authToken);
         LogoutResult logoutResult = handler.logout(logoutRequest);
         return new Gson().toJson(logoutResult);
+    }
+
+    private Object listGames(Request request, Response response) throws ResponseException {
+        String authToken = request.headers("authorization");
+        ListGamesRequest listGamesRequest = new ListGamesRequest(authToken);
+        ListGamesResult listGamesResult = handler.listGames(listGamesRequest);
+        return new Gson().toJson(listGamesResult);
+    }
+
+    private Object clear(Request request, Response response) throws ResponseException {
+        ClearResult clearResult = handler.clear(new ClearRequest());
+        return new Gson().toJson(clearResult);
     }
 
     public void stop() {

@@ -1,23 +1,29 @@
 package handler;
 
-import com.google.gson.Gson;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import service.*;
 
 @WebSocket
 public class ChessHandler {
-    private final UserService userService = new UserService();
-    //private final GameService gameService = new GameService();
+    private final ChessService chessService = new ChessService();
 
     public RegisterResult register(RegisterRequest request) throws ResponseException {
-        return userService.register(request);
+        return chessService.register(request);
     }
 
     public LoginResult login(LoginRequest request) throws ResponseException {
-        return userService.login(request);
+        return chessService.login(request);
     }
 
     public LogoutResult logout(LogoutRequest request) throws ResponseException {
-        return userService.logout(request);
+        return chessService.logout(request);
+    }
+
+    public ListGamesResult listGames(ListGamesRequest request) throws ResponseException {
+        return chessService.listGames(request);
+    }
+
+    public ClearResult clear(ClearRequest request) {
+        return chessService.clear(request);
     }
 }
