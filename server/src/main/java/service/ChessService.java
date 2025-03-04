@@ -13,9 +13,9 @@ import model.UserData;
 import java.util.UUID;
 
 public class ChessService {
-    private final MemoryAuthDAO authDataBase = new MemoryAuthDAO();
-    private final MemoryUserDAO userDataBase = new MemoryUserDAO();
-    private final MemoryGameDAO gameDatabase = new MemoryGameDAO();
+    MemoryAuthDAO authDataBase = new MemoryAuthDAO();
+    MemoryUserDAO userDataBase = new MemoryUserDAO();
+    MemoryGameDAO gameDatabase = new MemoryGameDAO();
 
     public static String generateToken() {
         return UUID.randomUUID().toString();
