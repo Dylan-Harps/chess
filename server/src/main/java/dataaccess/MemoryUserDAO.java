@@ -15,7 +15,7 @@ public class MemoryUserDAO implements UserDAO {
                 return u;
             }
         }
-        throw new DataAccessException("Error: Cannot access nonexistent userData");
+        throw new DataAccessException("Error: user doesn't exist");
     }
 
     public void createUser(UserData userData) {

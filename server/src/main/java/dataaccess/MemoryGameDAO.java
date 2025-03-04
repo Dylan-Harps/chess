@@ -15,7 +15,7 @@ public class MemoryGameDAO implements GameDAO {
                 return g;
             }
         }
-        return null;
+        return null; //TODO throw exception
     }
 
     public Collection<GameData> listGames() {

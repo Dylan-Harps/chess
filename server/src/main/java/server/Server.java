@@ -3,9 +3,7 @@ package server;
 import com.google.gson.Gson;
 import handler.ChessHandler;
 import handler.ResponseException;
-import service.RegisterRequest;
-import service.RegisterResult;
-import service.UserService;
+import service.*;
 import spark.*;
 
 //endpoints:
@@ -21,7 +19,7 @@ import spark.*;
 
 public class Server {
     private final ChessHandler handler = new ChessHandler();
-    private final UserService userService = new UserService();
+    //private final UserService userService = new UserService();
     //private final GameService gameService = new GameService();
 
     public int run(int desiredPort) {
@@ -35,7 +33,7 @@ public class Server {
         Spark.webSocket("/ws", handler);
 
         Spark.post("/user", this::register);
-        //Spark.post("/session", this::login);
+        Spark.post("/session", this::login);
         //Spark.delete("/session", this::logout);
         //Spark.get("/game", this::listGames);
         //Spark.post("/game", this::createGame);
@@ -50,12 +48,19 @@ public class Server {
     private void exceptionHandler(ResponseException ex, Request req, Response res) {
         res.status(ex.Status());
         res.body(ex.toJson());
+        //FIXME: exceptions are not being returned
     }
 
     private Object register(Request request, Response response) throws ResponseException {
         RegisterRequest registerRequest = new Gson().fromJson(request.body(), RegisterRequest.class);
         RegisterResult registerResult = handler.register(registerRequest);
         return new Gson().toJson(registerResult);
+    }
+
+    private Object login(Request request, Response response) throws ResponseException {
+        LoginRequest loginRequest = new Gson().fromJson(request.body(), LoginRequest.class);
+        LoginResult loginResult = handler.login(loginRequest);
+        return new Gson().toJson(loginResult);
     }
 
     public void stop() {
