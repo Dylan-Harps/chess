@@ -21,9 +21,8 @@ public class ChessService {
         return UUID.randomUUID().toString();
     }
 
-    int id = 0;
     public static int generateGameID() {
-        int id = 0;
+        int id = 1;
         return id++;
     }
 
@@ -35,7 +34,7 @@ public class ChessService {
                 || request.password().isEmpty()
                 || request.email() == null
                 || request.email().isEmpty()) {
-            throw new ResponseException(400, "bad request");
+            throw new ResponseException(400, "Error: bad request");
         }
         try {
             userDataBase.getUser(request.username());
@@ -51,7 +50,7 @@ public class ChessService {
             return new RegisterResult(request.username(), authToken);
         }
         //if getUser() returns without an error, then the username is already taken
-        throw new ResponseException(403, "already taken");
+        throw new ResponseException(403, "Error: already taken");
     }
 
     public LoginResult login(LoginRequest request) throws ResponseException {
@@ -60,7 +59,7 @@ public class ChessService {
                 || request.username().isEmpty()
                 || request.password() == null
                 || request.password().isEmpty()) {
-            throw new ResponseException(500, "invalid request");
+            throw new ResponseException(500, "Error: invalid request");
         }
 
         //check if username and password are correct
@@ -68,37 +67,37 @@ public class ChessService {
         try {
             userData = userDataBase.getUser(request.username());
         } catch (DataAccessException e) {
-            throw new ResponseException(500, e.getMessage());
+            throw new ResponseException(401, "Error: unauthorized");
         }
         if (!userData.password().equals(request.password())) {
-            throw new ResponseException(401, "unauthorized");
+            throw new ResponseException(401, "Error: unauthorized");
         }
 
         //check if user is already logged in
         AuthData authData;
+        String authToken = generateToken();
         try {
             authData = authDataBase.authenticateUser(request.username());
         } catch(DataAccessException e) {
             //if a DataAccessException is thrown, then the user is not logged in and can be logged in now
-            String authToken = generateToken();
             authDataBase.createAuth(new AuthData(authToken, request.username()));
             return new LoginResult(request.username(), authToken);
         }
-        throw new ResponseException(500, "already logged in");
+        return new LoginResult(request.username(), authToken);
     }
 
     public LogoutResult logout(LogoutRequest request) {
         //if the request is missing data, throw an exception
         if (request.authToken() == null
                 || request.authToken().isEmpty()) {
-            throw new ResponseException(500, "invalid request");
+            throw new ResponseException(500, "Error: invalid request");
         }
 
         //log out the user
         try {
             authDataBase.deleteAuth(request.authToken());
         } catch (DataAccessException e) {
-            throw new ResponseException(401, "unauthorized");
+            throw new ResponseException(401, "Error: unauthorized");
         }
 
         return new LogoutResult();
@@ -108,14 +107,14 @@ public class ChessService {
         //if the request is missing data, throw an exception
         if (request.authToken() == null
                 || request.authToken().isEmpty()) {
-            throw new ResponseException(500, "invalid request");
+            throw new ResponseException(500, "Error: invalid request");
         }
 
         //check if user is logged in
         try {
             authDataBase.getAuth(request.authToken());
         } catch (DataAccessException e) {
-            throw new ResponseException(401, "unauthorized");
+            throw new ResponseException(401, "Error: unauthorized");
         }
 
         return new ListGamesResult(gameDatabase.listGames());
@@ -127,7 +126,7 @@ public class ChessService {
                 || request.authToken().isEmpty()
                 || request.gameName() == null
                 || request.gameName().isEmpty()) {
-            throw new ResponseException(400, "bad request");
+            throw new ResponseException(400, "Error: bad request");
         }
 
         //check if logged in
@@ -135,7 +134,7 @@ public class ChessService {
         try {
             authData = authDataBase.getAuth(request.authToken());
         } catch (DataAccessException e) {
-            throw new ResponseException(401, "unauthorized");
+            throw new ResponseException(401, "Error: unauthorized");
         }
 
         //create the game
@@ -149,9 +148,9 @@ public class ChessService {
         //if the request is missing data, throw an exception
         if (request.authToken() == null
                 || request.authToken().isEmpty()
-                || request.color() == null
-                || request.color().isEmpty()) {
-            throw new ResponseException(400, "bad request");
+                || request.playerColor() == null
+                || request.playerColor().isEmpty()) {
+            throw new ResponseException(400, "Error: bad request");
         }
 
         //check if logged in
@@ -159,7 +158,7 @@ public class ChessService {
         try {
             authData = authDataBase.getAuth(request.authToken());
         } catch (DataAccessException e) {
-            throw new ResponseException(401, "unauthorized");
+            throw new ResponseException(401, "Error: unauthorized");
         }
 
         //check if game exists
@@ -167,22 +166,22 @@ public class ChessService {
         try {
             gameData = gameDatabase.getGame(request.gameID());
         } catch (DataAccessException e) {
-            throw new ResponseException(500, e.getMessage());
+            throw new ResponseException(400, "Error: bad request");
         }
 
         //figure out which color is wanted
         boolean isWhite;
-        if (request.color().equals("WHITE")) {
+        if (request.playerColor().equals("WHITE")) {
             isWhite = true;
-        } else if (request.color().equals("BLACK")) {
+        } else if (request.playerColor().equals("BLACK")) {
             isWhite = false;
-        } else throw new ResponseException(400, "bad request");
+        } else throw new ResponseException(400, "Error: bad request");
 
         //check if already taken
-        if (isWhite && gameData.whiteUsername() != null) {
-            throw new ResponseException(403, "already taken");
-        } else if (!isWhite && gameData.blackUsername() != null) {
-            throw new ResponseException(403, "already taken");
+        if (isWhite && gameData.whiteUsername() != null && !gameData.whiteUsername().equals(authData.username())) {
+            throw new ResponseException(403, "Error: already taken");
+        } else if (!isWhite && gameData.blackUsername() != null && !gameData.blackUsername().equals(authData.username())) {
+            throw new ResponseException(403, "Error: already taken");
         }
 
         //join the game
@@ -196,7 +195,7 @@ public class ChessService {
             gameDatabase.deleteGame(gameData.gameID());
             gameDatabase.createGame(update);
         } catch (DataAccessException e) {
-            throw new ResponseException(500, e.getMessage());
+            throw new ResponseException(401, "Error: unauthorized");
         }
 
         return new JoinGameResult();

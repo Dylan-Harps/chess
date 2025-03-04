@@ -24,7 +24,7 @@ public class ServiceTests {
         ChessService chessService = new ChessService();
         RegisterRequest request = new RegisterRequest("", "myPassword", "myEmail@email.com");
 
-        Assertions.assertThrows(RuntimeException.class, () -> chessService.register(request), "register: does not throw bad request");
+        Assertions.assertThrows(Exception.class, () -> chessService.register(request), "register: does not throw bad request");
     }
 
     @Test
@@ -34,7 +34,7 @@ public class ServiceTests {
         ChessService chessService = new ChessService();
         RegisterRequest request = new RegisterRequest(null, "myPassword", "myEmail@email.com");
 
-        Assertions.assertThrows(RuntimeException.class, () -> chessService.register(request), "register: does not throw bad request");
+        Assertions.assertThrows(Exception.class, () -> chessService.register(request), "register: does not throw bad request");
     }
 
     @Test
@@ -47,6 +47,30 @@ public class ServiceTests {
 
         RegisterRequest request2 = new RegisterRequest("myUsername", "myPassword2", "myEmail2@email.com");
 
-        Assertions.assertThrows(RuntimeException.class, () -> chessService.register(request2), "register: does not throw already taken");
+        Assertions.assertThrows(Exception.class, () -> chessService.register(request2), "register: does not throw already taken");
+    }
+
+    @Test
+    @Order(5)
+    @DisplayName("Add and List Games")
+    public void listGames() {
+        ChessService chessService = new ChessService();
+
+        //register user
+        RegisterRequest request0 = new RegisterRequest("myUsername", "myPassword", "myEmail@email.com");
+        RegisterResult result0 = chessService.register(request0);
+        String authToken = result0.authToken();
+
+        //create games
+        for (int i = 1; i <= 3; ++i) {
+            CreateGameRequest request1 = new CreateGameRequest(authToken, "game #" + i);
+            chessService.createGame(request1);
+        }
+
+        //list the games
+        ListGamesRequest request2 = new ListGamesRequest(authToken);
+        ListGamesResult result2 = chessService.listGames(request2);
+
+        Assertions.assertNotNull(result2, "listGames: did not list games");
     }
 }

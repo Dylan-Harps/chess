@@ -78,7 +78,7 @@ public class Server {
     private Object joinGame(Request request, Response response) throws ResponseException {
         String authToken = request.headers("authorization");
         JoinGameRequest temp = new Gson().fromJson(request.body(), JoinGameRequest.class);
-        JoinGameRequest joinGameRequest = new JoinGameRequest(authToken, temp.color(), temp.gameID());
+        JoinGameRequest joinGameRequest = new JoinGameRequest(authToken, temp.playerColor(), temp.gameID());
         JoinGameResult joinGameResult = handler.joinGame(joinGameRequest);
         return new Gson().toJson(joinGameResult);
     }
