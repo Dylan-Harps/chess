@@ -226,5 +226,54 @@ public class ServiceTests {
     //join games
 
     //clear
-    //Assertions.assertThrows(Exception.class, () -> chessService.gameDatabase.getGame(1), "clear: games still exist after clear");
+    @Test
+    @Order(12)
+    @DisplayName("Clear Normal")
+    public void clearNormal() {
+        ChessService chessService = new ChessService();
+
+        //register user
+        RegisterRequest request0 = new RegisterRequest("myUsername", "myPassword", "myEmail@email.com");
+        RegisterResult result0 = chessService.register(request0);
+        String authToken = result0.authToken();
+
+        //create games
+        for (int i = 1; i <= 3; ++i) {
+            CreateGameRequest request1 = new CreateGameRequest(authToken, "game #" + i);
+            chessService.createGame(request1);
+        }
+
+        //clear
+        ClearRequest request2 = new ClearRequest();
+        ClearResult result2 = chessService.clear(request2);
+
+        Assertions.assertThrows(Exception.class, () -> chessService.gameDatabase.getGame(1), "clear: games still exist after clear");
+    }
+
+    @Test
+    @Order(13)
+    @DisplayName("Multiple Clears")
+    public void multipleClears() {
+        ChessService chessService = new ChessService();
+
+        //register user
+        RegisterRequest request0 = new RegisterRequest("myUsername", "myPassword", "myEmail@email.com");
+        RegisterResult result0 = chessService.register(request0);
+        String authToken = result0.authToken();
+
+        //create games
+        for (int i = 1; i <= 3; ++i) {
+            CreateGameRequest request1 = new CreateGameRequest(authToken, "game #" + i);
+            chessService.createGame(request1);
+        }
+
+        //clear
+        ClearRequest request2 = new ClearRequest();
+        ClearResult result2 = chessService.clear(request2);
+        result2 = chessService.clear(request2);
+        result2 = chessService.clear(request2);
+        result2 = chessService.clear(request2);
+
+        Assertions.assertThrows(Exception.class, () -> chessService.gameDatabase.getGame(1), "clear: games still exist after clear");
+    }
 }
