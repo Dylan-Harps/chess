@@ -34,7 +34,7 @@ public class Server {
 
         Spark.post("/user", this::register);
         Spark.post("/session", this::login);
-        //Spark.delete("/session", this::logout);
+        Spark.delete("/session", this::logout);
         //Spark.get("/game", this::listGames);
         //Spark.post("/game", this::createGame);
         //Spark.put("/game", this::joinGame);
@@ -48,7 +48,6 @@ public class Server {
     private void exceptionHandler(ResponseException ex, Request req, Response res) {
         res.status(ex.Status());
         res.body(ex.toJson());
-        //FIXME: exceptions are not being returned
     }
 
     private Object register(Request request, Response response) throws ResponseException {
@@ -61,6 +60,14 @@ public class Server {
         LoginRequest loginRequest = new Gson().fromJson(request.body(), LoginRequest.class);
         LoginResult loginResult = handler.login(loginRequest);
         return new Gson().toJson(loginResult);
+    }
+
+    private Object logout(Request request, Response response) throws ResponseException {
+        String authToken = request.params(":authToken"); //FIXME doesn't work and I have no idea why
+
+        LogoutRequest logoutRequest = new LogoutRequest(authToken);
+        LogoutResult logoutResult = handler.logout(logoutRequest);
+        return new Gson().toJson(logoutResult);
     }
 
     public void stop() {

@@ -16,4 +16,8 @@ public class ChessHandler {
     public LoginResult login(LoginRequest request) throws ResponseException {
         return userService.login(request);
     }
+
+    public LogoutResult logout(LogoutRequest request) throws ResponseException {
+        return userService.logout(request);
+    }
 }

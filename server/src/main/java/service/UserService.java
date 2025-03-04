@@ -6,6 +6,8 @@ import dataaccess.MemoryUserDAO;
 import handler.ResponseException;
 import model.AuthData;
 import model.UserData;
+
+import javax.xml.crypto.Data;
 import java.util.UUID;
 
 public class UserService {
@@ -76,7 +78,20 @@ public class UserService {
         throw new ResponseException(500, "already logged in");
     }
 
-    public void logout(LogoutRequest logoutRequest) {
-        //TODO
+    public LogoutResult logout(LogoutRequest logoutRequest) {
+        //if the request is missing data, throw an exception
+        if (logoutRequest.authToken() == null
+                || logoutRequest.authToken().isEmpty()) {
+            throw new ResponseException(401, "unauthorized");
+        }
+
+        //log out the user
+        try {
+            authDataBase.deleteAuth(logoutRequest.authToken());
+        } catch (DataAccessException e) {
+            throw new ResponseException(401, "unauthorized");
+        }
+
+        return new LogoutResult();
     }
 }
