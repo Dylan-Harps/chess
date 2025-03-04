@@ -30,15 +30,6 @@ public class MemoryGameDAO implements GameDAO {
         gameDatabase.remove(getGame(gameID));
     }
 
-    public GameData updateGame(GameData gameData)  throws DataAccessException {
-        GameData old = getGame(gameData.gameID());
-        if (old != null) {
-            gameDatabase.remove(old);
-        }
-        createGame(gameData);
-        return gameData;
-    }
-
     public void clearAllGameData() {
         gameDatabase.clear();
     }

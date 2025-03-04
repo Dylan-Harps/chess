@@ -13,7 +13,5 @@ public interface GameDAO {
 
     public void deleteGame(int gameID)  throws DataAccessException;
 
-    public GameData updateGame(GameData gameData)  throws DataAccessException;
-
     public void clearAllGameData();
 }

@@ -6,8 +6,6 @@ import handler.ResponseException;
 import service.*;
 import spark.*;
 
-import java.util.List;
-
 public class Server {
     private final ChessHandler handler = new ChessHandler();
     //private final UserService userService = new UserService();
@@ -37,7 +35,7 @@ public class Server {
     }
 
     private void exceptionHandler(ResponseException ex, Request req, Response res) {
-        res.status(ex.Status());
+        res.status(ex.status());
         res.body(ex.toJson());
     }
 

@@ -175,7 +175,9 @@ public class ChessService {
             isWhite = true;
         } else if (request.playerColor().equals("BLACK")) {
             isWhite = false;
-        } else throw new ResponseException(400, "Error: bad request");
+        } else {
+            throw new ResponseException(400, "Error: bad request");
+        }
 
         //check if already taken
         if (isWhite && gameData.whiteUsername() != null && !gameData.whiteUsername().equals(authData.username())) {

@@ -65,7 +65,7 @@ public class ServiceTests {
         LogoutRequest request1 = new LogoutRequest(result0.authToken());
         LogoutResult result1 = chessService.logout(request1);
 
-        Assertions.assertThrows(Exception.class, () -> chessService.authDataBase.getAuth(result0.authToken()), "logout: logout doesn't delete authData");
+        Assertions.assertThrows(Exception.class, ()->chessService.authDataBase.getAuth(result0.authToken()), "logout: doesn't delete authData");
     }
 
     @Test

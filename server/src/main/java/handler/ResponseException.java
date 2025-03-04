@@ -16,7 +16,7 @@ public class ResponseException extends RuntimeException {
         return new Gson().toJson(Map.of("message", getMessage(), "status", status));
     }
 
-    public int Status() {
+    public int status() {
         return status;
     }
 }
