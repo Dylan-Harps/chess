@@ -8,8 +8,6 @@ import spark.*;
 
 public class Server {
     private final ChessHandler handler = new ChessHandler();
-    //private final UserService userService = new UserService();
-    //private final GameService gameService = new GameService();
 
     public int run(int desiredPort) {
         Spark.port(desiredPort);

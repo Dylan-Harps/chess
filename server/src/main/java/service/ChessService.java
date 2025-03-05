@@ -10,6 +10,7 @@ import model.AuthData;
 import model.GameData;
 import model.UserData;
 
+import java.lang.reflect.RecordComponent;
 import java.util.UUID;
 
 public class ChessService {
