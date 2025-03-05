@@ -14,7 +14,7 @@ public class MemoryAuthDAO implements AuthDAO {
                 return a;
             }
         }
-        throw new DataAccessException("Error: user is not logged in or doesn't exist");
+        throw new DataAccessException("Error: unauthorized");
     }
 
     public void createAuth(AuthData authData) {
