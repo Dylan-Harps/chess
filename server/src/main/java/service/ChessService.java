@@ -17,12 +17,12 @@ public class ChessService {
     MemoryUserDAO userDataBase = new MemoryUserDAO();
     MemoryGameDAO gameDatabase = new MemoryGameDAO();
 
-    public static String generateToken() {
+    private static String generateToken() {
         return UUID.randomUUID().toString();
     }
 
-    public static int generateGameID() {
-        int id = 1;
+    private static int id = 1;
+    private static int generateGameID() {
         return id++;
     }
 
@@ -73,16 +73,8 @@ public class ChessService {
             throw new ResponseException(401, "Error: unauthorized");
         }
 
-        //check if user is already logged in
-        AuthData authData;
         String authToken = generateToken();
-        try {
-            authData = authDataBase.authenticateUser(request.username());
-        } catch(DataAccessException e) {
-            //if a DataAccessException is thrown, then the user is not logged in and can be logged in now
-            authDataBase.createAuth(new AuthData(authToken, request.username()));
-            return new LoginResult(request.username(), authToken);
-        }
+        authDataBase.createAuth(new AuthData(authToken, request.username()));
         return new LoginResult(request.username(), authToken);
     }
 
@@ -130,15 +122,14 @@ public class ChessService {
         }
 
         //check if logged in
-        AuthData authData;
         try {
-            authData = authDataBase.getAuth(request.authToken());
+            authDataBase.getAuth(request.authToken());
         } catch (DataAccessException e) {
             throw new ResponseException(401, "Error: unauthorized");
         }
 
         //create the game
-        GameData gameData = new GameData(generateGameID(), authData.username(), null, request.gameName(), new ChessGame());
+        GameData gameData = new GameData(generateGameID(), null, null, request.gameName(), new ChessGame());
         gameDatabase.createGame(gameData);
 
         return new CreateGameResult(gameData.gameID());
@@ -170,14 +161,10 @@ public class ChessService {
         }
 
         //figure out which color is wanted
-        boolean isWhite;
-        if (request.playerColor().equals("WHITE")) {
-            isWhite = true;
-        } else if (request.playerColor().equals("BLACK")) {
-            isWhite = false;
-        } else {
+        if (!(request.playerColor().equals("WHITE") || request.playerColor().equals("BLACK"))) {
             throw new ResponseException(400, "Error: bad request");
         }
+        boolean isWhite = request.playerColor().equals("WHITE");
 
         //check if already taken
         if (isWhite && gameData.whiteUsername() != null && !gameData.whiteUsername().equals(authData.username())) {
@@ -187,15 +174,15 @@ public class ChessService {
         }
 
         //join the game
-        GameData update;
+        GameData updatedGameData;
         if (isWhite) {
-            update = new GameData(gameData.gameID(), authData.username(), gameData.blackUsername(), gameData.gameName(), gameData.game());
+            updatedGameData = new GameData(gameData.gameID(), authData.username(), gameData.blackUsername(), gameData.gameName(), gameData.game());
         } else {
-            update = new GameData(gameData.gameID(), gameData.whiteUsername(), authData.username(), gameData.gameName(), gameData.game());
+            updatedGameData = new GameData(gameData.gameID(), gameData.whiteUsername(), authData.username(), gameData.gameName(), gameData.game());
         }
         try {
             gameDatabase.deleteGame(gameData.gameID());
-            gameDatabase.createGame(update);
+            gameDatabase.createGame(updatedGameData);
         } catch (DataAccessException e) {
             throw new ResponseException(401, "Error: unauthorized");
         }

@@ -17,15 +17,6 @@ public class MemoryAuthDAO implements AuthDAO {
         throw new DataAccessException("Error: user is not logged in or doesn't exist");
     }
 
-    public AuthData authenticateUser(String username) throws DataAccessException {
-        for (AuthData a : authDatabase) {
-            if (a.username().equals(username)) {
-                return a;
-            }
-        }
-        throw new DataAccessException("Error: user is not logged in or doesn't exist");
-    }
-
     public void createAuth(AuthData authData) {
         authDatabase.add(authData);
     }
