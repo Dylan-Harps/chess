@@ -13,6 +13,7 @@ import model.UserData;
 import java.util.UUID;
 
 public class ChessService {
+    //databases will probably have to be passed in from the server
     MemoryAuthDAO authDataBase = new MemoryAuthDAO();
     MemoryUserDAO userDataBase = new MemoryUserDAO();
     MemoryGameDAO gameDatabase = new MemoryGameDAO();
