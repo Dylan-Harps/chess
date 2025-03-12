@@ -1,10 +1,7 @@
 package service;
 
 import chess.ChessGame;
-import dataaccess.DataAccessException;
-import dataaccess.MemoryAuthDAO;
-import dataaccess.MemoryGameDAO;
-import dataaccess.MemoryUserDAO;
+import dataaccess.*;
 import handler.ResponseException;
 import model.AuthData;
 import model.GameData;
@@ -13,7 +10,9 @@ import model.UserData;
 import java.util.UUID;
 
 public class ChessService {
-    //databases will probably have to be passed in from the server
+    SQLDataAccess database = new SQLDataAccess();
+
+    //comment these out once we're done
     MemoryAuthDAO authDataBase = new MemoryAuthDAO();
     MemoryUserDAO userDataBase = new MemoryUserDAO();
     MemoryGameDAO gameDatabase = new MemoryGameDAO();

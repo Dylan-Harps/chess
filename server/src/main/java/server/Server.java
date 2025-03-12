@@ -3,7 +3,6 @@ package server;
 import com.google.gson.Gson;
 import handler.ChessHandler;
 import handler.ResponseException;
-import dataaccess.DatabaseManager;
 import service.*;
 import spark.*;
 
@@ -14,8 +13,6 @@ import static java.sql.DriverManager.getConnection;
 
 public class Server {
     private final ChessHandler handler = new ChessHandler();
-
-    //create database here. Pass in to ChessService, which will then pass it to the DAOs
 
     public int run(int desiredPort) {
         Spark.port(desiredPort);

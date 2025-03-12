@@ -30,6 +30,129 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
         }
     }
 
+    private void executeUpdate(String statement, Object... params) throws ResponseException {
+        try (var conn = DatabaseManager.getConnection()) {
+            try (var ps = conn.prepareStatement(statement, RETURN_GENERATED_KEYS)) {
+                for (var i = 0; i < params.length; i++) {
+                    var param = params[i];
+                    if (param instanceof String p) ps.setString(i + 1, p);
+                    else if (param instanceof Integer p) ps.setInt(i + 1, p);
+                    else if (param instanceof ChessGame p) ps.setString(i + 1, p.toString()); //TODO: serialization of ChessGame
+                }
+                ps.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new ResponseException(500, String.format("unable to update database: %s, %s", statement, e.getMessage()));
+        }
+    }
+
+    @Override
+    public AuthData getAuth(String authToken) throws DataAccessException {
+        try (var conn = DatabaseManager.getConnection()) {
+            var statement = "SELECT authToken, username FROM auth WHERE authToken= ?;";
+            try (var ps = conn.prepareStatement(statement)) {
+                ps.setString(1, authToken);
+                try (var rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return new AuthData(rs.getString("authToken"), rs.getString("username"));
+                    } else {
+                        throw new DataAccessException("Error: unauthorized");
+                    }
+                }
+            }
+        } catch (DataAccessException e) {
+            throw new DataAccessException(e.getMessage());
+        } catch (Exception e) {
+            throw new ResponseException(500, String.format("Unable to read data: %s", e.getMessage()));
+        }
+    }
+
+    @Override
+    public void createAuth(AuthData authData) {
+        var statement = "INSERT INTO auth (authToken, username) VALUES (?, ?)";
+        executeUpdate(statement, authData.authToken(), authData.username());
+    }
+
+    @Override
+    public void deleteAuth(String authToken) throws DataAccessException {
+        try {
+            var statement = "DELETE FROM auth WHERE authToken=?";
+            executeUpdate(statement, authToken);
+        } catch(Exception e) {
+            throw new DataAccessException("Error: unauthorized");
+        }
+    }
+
+    @Override
+    public void clearAllAuthData() {
+        var statement = "TRUNCATE auth";
+        executeUpdate(statement);
+    }
+
+    @Override
+    public GameData getGame(int gameID) throws DataAccessException {
+        return null;
+    }
+
+    @Override
+    public Collection<GameData> listGames() {
+        return List.of();
+    }
+
+    @Override
+    public void createGame(GameData gameData) {
+
+    }
+
+    @Override
+    public void deleteGame(int gameID) throws DataAccessException {
+        try {
+            var statement = "DELETE FROM games WHERE gameID=?";
+            executeUpdate(statement, gameID);
+        } catch(Exception e) {
+            throw new DataAccessException("Error: game doesn't exist");
+        }
+    }
+
+    @Override
+    public void clearAllGameData() {
+        var statement = "TRUNCATE games";
+        executeUpdate(statement);
+    }
+
+    @Override
+    public UserData getUser(String username) throws DataAccessException {
+        try (var conn = DatabaseManager.getConnection()) {
+            var statement = "SELECT username, password, email FROM users WHERE username= ?;";
+            try (var ps = conn.prepareStatement(statement)) {
+                ps.setString(1, username);
+                try (var rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return new UserData(username, rs.getString("password"), rs.getString("email"));
+                    } else {
+                        throw new DataAccessException("Error: user doesn't exist");
+                    }
+                }
+            }
+        } catch (DataAccessException e) {
+            throw new DataAccessException(e.getMessage());
+        } catch (Exception e) {
+            throw new ResponseException(500, String.format("Unable to read data: %s", e.getMessage()));
+        }
+    }
+
+    @Override
+    public void createUser(UserData userData) {
+        var statement = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
+        executeUpdate(statement, userData.username(), userData.password(), userData.email());
+    }
+
+    @Override
+    public void clearAllUserData() {
+        var statement = "TRUNCATE users";
+        executeUpdate(statement);
+    }
+
     private final String[] createStatements = {
             """
             CREATE TABLE IF NOT EXISTS  users (
@@ -57,87 +180,4 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
             """
     };
-
-    private int executeUpdate(String statement, Object... params) throws ResponseException {
-        try (var conn = DatabaseManager.getConnection()) {
-            try (var ps = conn.prepareStatement(statement, RETURN_GENERATED_KEYS)) {
-                for (var i = 0; i < params.length; i++) {
-                    var param = params[i];
-                    if (param instanceof String p) ps.setString(i + 1, p);
-                    else if (param instanceof Integer p) ps.setInt(i + 1, p);
-                    else if (param instanceof ChessGame p) ps.setString(i + 1, p.toString()); //TODO: serialization of ChessGame
-                }
-                ps.executeUpdate();
-
-                var rs = ps.getGeneratedKeys();
-                if (rs.next()) {
-                    return rs.getInt(1);
-                }
-
-                return 0;
-            }
-        } catch (SQLException e) {
-            throw new ResponseException(500, String.format("unable to update database: %s, %s", statement, e.getMessage()));
-        }
-    }
-
-    @Override
-    public AuthData getAuth(String authToken) throws DataAccessException {
-        return null;
-    }
-
-    @Override
-    public void createAuth(AuthData authData) {
-
-    }
-
-    @Override
-    public void deleteAuth(String authToken) throws DataAccessException {
-
-    }
-
-    @Override
-    public void clearAllAuthData() {
-
-    }
-
-    @Override
-    public GameData getGame(int gameID) throws DataAccessException {
-        return null;
-    }
-
-    @Override
-    public Collection<GameData> listGames() {
-        return List.of();
-    }
-
-    @Override
-    public void createGame(GameData gameData) {
-
-    }
-
-    @Override
-    public void deleteGame(int gameID) throws DataAccessException {
-
-    }
-
-    @Override
-    public void clearAllGameData() {
-
-    }
-
-    @Override
-    public UserData getUser(String username) throws DataAccessException {
-        return null;
-    }
-
-    @Override
-    public void createUser(UserData userData) {
-
-    }
-
-    @Override
-    public void clearAllUserData() {
-
-    }
 }
