@@ -1,6 +1,8 @@
 package dataaccess;
 
 import chess.ChessGame;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import handler.ResponseException;
 import model.AuthData;
 import model.GameData;
@@ -37,7 +39,12 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
                     var param = params[i];
                     if (param instanceof String p) ps.setString(i + 1, p);
                     else if (param instanceof Integer p) ps.setInt(i + 1, p);
-                    else if (param instanceof ChessGame p) ps.setString(i + 1, p.toString()); //TODO: serialization of ChessGame
+                    else if (param instanceof ChessGame p) {
+                        //serialize ChessGame into json
+                        var json = new Gson().toJson(p);
+
+                        ps.setString(i + 1, p.toString());
+                    }
                 }
                 ps.executeUpdate();
             }
@@ -91,17 +98,40 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
 
     @Override
     public GameData getGame(int gameID) throws DataAccessException {
-        return null;
+        try (var conn = DatabaseManager.getConnection()) {
+            var statement = "SELECT gameID, whiteUsername, blackUsername, gameName, game FROM games WHERE gameID= ?;";
+            try (var ps = conn.prepareStatement(statement)) {
+                ps.setInt(1, gameID);
+                try (var rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        //deserialize json into ChessGame
+                        var builder = new GsonBuilder();
+                        builder.registerTypeAdapter(ChessGame.class, new ChessGameAdapter());
+                        var chessGame = builder.create().fromJson(rs.getString("game"), ChessGame.class);
+
+                        return new GameData(gameID, rs.getString("whiteUsername"), rs.getString("blackUserName"), rs.getString("gameName"), chessGame);
+                    } else {
+                        throw new DataAccessException("Error: game doesn't exist");
+                    }
+                }
+            }
+        } catch (DataAccessException e) {
+            throw new DataAccessException(e.getMessage());
+        } catch (Exception e) {
+            throw new ResponseException(500, String.format("Unable to read data: %s", e.getMessage()));
+        }
     }
 
     @Override
     public Collection<GameData> listGames() {
         return List.of();
+        //TODO
     }
 
     @Override
     public void createGame(GameData gameData) {
-
+        var statement = "INSERT INTO games (gameID, whiteUsername, blackUsername, gameName, game) VALUES (?, ?, ?, ?, ?)";
+        executeUpdate(statement, gameData.gameID(), gameData.whiteUsername(), gameData.blackUsername(), gameData.gameName(), gameData.game());
     }
 
     @Override
