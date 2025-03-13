@@ -12,26 +12,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import static java.sql.Statement.RETURN_GENERATED_KEYS;
 
 public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
     public SQLDataAccess() throws ResponseException {
         configureDatabase();
-    }
-
-    private void configureDatabase() throws ResponseException {
-        DatabaseManager.createDatabase();
-        try (var conn = DatabaseManager.getConnection()) {
-            for (var statement : createStatements) {
-                try (var preparedStatement = conn.prepareStatement(statement)) {
-                    preparedStatement.executeUpdate();
-                }
-            }
-        } catch (SQLException ex) {
-            throw new ResponseException(500, String.format("Unable to configure database: %s", ex.getMessage()));
-        }
     }
 
     private void executeUpdate(String statement, Object... params) throws ResponseException {
@@ -207,31 +193,44 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
         executeUpdate(statement);
     }
 
+    private void configureDatabase() throws ResponseException {
+        DatabaseManager.createDatabase();
+        try (var conn = DatabaseManager.getConnection()) {
+            for (var statement : createStatements) {
+                try (var preparedStatement = conn.prepareStatement(statement)) {
+                    preparedStatement.executeUpdate();
+                }
+            }
+        } catch (SQLException ex) {
+            throw new ResponseException(500, String.format("Unable to configure database: %s", ex.getMessage()));
+        }
+    }
+
     private final String[] createStatements = {
             """
-            CREATE TABLE IF NOT EXISTS  users (
-              `username` varchar(256) NOT NULL,
-              `password` varchar(256) NOT NULL,
-              `email` varchar(256) NOT NULL,
-              PRIMARY KEY (`name`),
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+            CREATE TABLE IF NOT EXISTS users (
+              username VARCHAR(255) NOT NULL,
+              password VARCHAR(255) NOT NULL,
+              email VARCHAR(255) NOT NULL,
+              PRIMARY KEY (username)
+            );
             """,
             """
-            CREATE TABLE IF NOT EXISTS  auth (
-              `authToken` varchar(256) NOT NULL,
-              `username` varchar(256) NOT NULL,
-              PRIMARY KEY (`authToken`),
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+            CREATE TABLE IF NOT EXISTS auth (
+              authToken VARCHAR(255) NOT NULL,
+              username VARCHAR(255) NOT NULL,
+              PRIMARY KEY (authToken)
+            );
             """,
             """
-            CREATE TABLE IF NOT EXISTS  games (
-              `gameID` int NOT NULL AUTO_INCREMENT,
-              `whiteUsername` varchar(256) NOT NULL,
-              `blackUsername` varchar(256) NOT NULL,
-              `gameName` varchar(256) NOT NULL,
-              `game` TEXT NOT NULL,
-              PRIMARY KEY (`id`),
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+            CREATE TABLE IF NOT EXISTS games (
+              gameID int NOT NULL AUTO_INCREMENT,
+              whiteUsername VARCHAR(255) NOT NULL,
+              blackUsername VARCHAR(255) NOT NULL,
+              gameName VARCHAR(255) NOT NULL,
+              game TEXT NOT NULL,
+              PRIMARY KEY (gameID)
+            );
             """
     };
 }
