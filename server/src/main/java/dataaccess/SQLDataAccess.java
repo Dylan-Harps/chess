@@ -8,7 +8,9 @@ import model.AuthData;
 import model.GameData;
 import model.UserData;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -42,8 +44,7 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
                     else if (param instanceof ChessGame p) {
                         //serialize ChessGame into json
                         var json = new Gson().toJson(p);
-
-                        ps.setString(i + 1, p.toString());
+                        ps.setString(i + 1, json);
                     }
                 }
                 ps.executeUpdate();
@@ -96,6 +97,22 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
         executeUpdate(statement);
     }
 
+    private GameData readGameFromJson(ResultSet rs) {
+        try {
+            int gameID = rs.getInt("gameID");
+            String whiteUsername = rs.getString("whiteUsername");
+            String blackUsername = rs.getString("blackUserName");
+            String gameName = rs.getString("gameName");
+            //deserialize json into ChessGame
+            var builder = new GsonBuilder();
+            var chessGame = builder.create().fromJson(rs.getString("game"), ChessGame.class);
+
+            return new GameData(gameID, whiteUsername, blackUsername, gameName, chessGame);
+        } catch (Exception e) {
+            throw new ResponseException(500, String.format("Unable to read data: %s", e.getMessage()));
+        }
+    }
+
     @Override
     public GameData getGame(int gameID) throws DataAccessException {
         try (var conn = DatabaseManager.getConnection()) {
@@ -104,12 +121,7 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
                 ps.setInt(1, gameID);
                 try (var rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        //deserialize json into ChessGame
-                        var builder = new GsonBuilder();
-                        builder.registerTypeAdapter(ChessGame.class, new ChessGameAdapter());
-                        var chessGame = builder.create().fromJson(rs.getString("game"), ChessGame.class);
-
-                        return new GameData(gameID, rs.getString("whiteUsername"), rs.getString("blackUserName"), rs.getString("gameName"), chessGame);
+                        return readGameFromJson(rs);
                     } else {
                         throw new DataAccessException("Error: game doesn't exist");
                     }
@@ -124,8 +136,20 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
 
     @Override
     public Collection<GameData> listGames() {
-        return List.of();
-        //TODO
+        var result = new ArrayList<GameData>();
+        try (var conn = DatabaseManager.getConnection()) {
+            var statement = "SELECT gameID, whiteUsername, blackUsername, gameName, game FROM games;";
+            try (var ps = conn.prepareStatement(statement)) {
+                try (var rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        result.add(readGameFromJson(rs));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new ResponseException(500, String.format("Unable to read data: %s", e.getMessage()));
+        }
+        return result;
     }
 
     @Override

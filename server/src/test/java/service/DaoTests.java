@@ -1,13 +1,8 @@
 package service;
 
-import chess.ChessBoard;
 import chess.ChessGame;
-import chess.ChessPiece;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import dataaccess.ChessBoardAdapter;
-import dataaccess.ChessGameAdapter;
-import dataaccess.ChessPieceAdapter;
 import org.junit.jupiter.api.*;
 
 import static java.lang.System.out;
@@ -31,10 +26,7 @@ public class DaoTests {
     @DisplayName("Deserialize ChessGame")
     public void deserializeChessGame() {
         var builder = new GsonBuilder();
-        builder.registerTypeAdapter(ChessGame.class, new ChessGameAdapter());
-        builder.registerTypeAdapter(ChessBoard.class, new ChessBoardAdapter());
-        builder.registerTypeAdapter(ChessPiece.class, new ChessPieceAdapter());
         var chessGame = builder.create().fromJson(gameJson, ChessGame.class);
-        out.print(chessGame.toString());
+        out.print(chessGame.getBoard().toString());
     }
 }
