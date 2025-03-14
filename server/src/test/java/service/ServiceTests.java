@@ -65,7 +65,7 @@ public class ServiceTests {
         LogoutRequest request1 = new LogoutRequest(result0.authToken());
         LogoutResult result1 = chessService.logout(request1);
 
-        Assertions.assertThrows(Exception.class, ()->chessService.authDataBase.getAuth(result0.authToken()), "logout: doesn't delete authData");
+        Assertions.assertThrows(Exception.class, ()->chessService.database.getAuth(result0.authToken()), "logout: doesn't delete authData");
     }
 
     @Test
@@ -103,7 +103,7 @@ public class ServiceTests {
         LoginResult result2 = chessService.login(request2);
 
         Assertions.assertNotEquals(result0.authToken(), result2.authToken(), "login: login uses same authData each time");
-        Assertions.assertDoesNotThrow(() -> chessService.authDataBase.getAuth(result2.authToken()), "login: login does not add authToken");
+        Assertions.assertDoesNotThrow(() -> chessService.database.getAuth(result2.authToken()), "login: login does not add authToken");
     }
 
     @Test
@@ -141,7 +141,7 @@ public class ServiceTests {
         CreateGameRequest request1 = new CreateGameRequest(authToken, "gameName");
         chessService.createGame(request1);
 
-        Assertions.assertDoesNotThrow(() -> chessService.gameDatabase.getGame(1), "createGame: did not create game");
+        Assertions.assertDoesNotThrow(() -> chessService.database.getGame(1), "createGame: did not create game");
     }
 
     @Test
@@ -247,7 +247,7 @@ public class ServiceTests {
         ClearRequest request2 = new ClearRequest();
         ClearResult result2 = chessService.clear(request2);
 
-        Assertions.assertThrows(Exception.class, () -> chessService.gameDatabase.getGame(1), "clear: games still exist after clear");
+        Assertions.assertThrows(Exception.class, () -> chessService.database.getGame(1), "clear: games still exist after clear");
     }
 
     @Test
@@ -274,6 +274,6 @@ public class ServiceTests {
         result2 = chessService.clear(request2);
         result2 = chessService.clear(request2);
 
-        Assertions.assertThrows(Exception.class, () -> chessService.gameDatabase.getGame(1), "clear: games still exist after clear");
+        Assertions.assertThrows(Exception.class, () -> chessService.database.getGame(1), "clear: games still exist after clear");
     }
 }

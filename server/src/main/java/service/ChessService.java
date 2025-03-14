@@ -13,9 +13,11 @@ public class ChessService {
     SQLDataAccess database = new SQLDataAccess();
 
     //comment these out once we're done
+    /*
     MemoryAuthDAO authDataBase = new MemoryAuthDAO();
     MemoryUserDAO userDataBase = new MemoryUserDAO();
     MemoryGameDAO gameDatabase = new MemoryGameDAO();
+    */
     private static int id = 1;
 
     private static String generateToken() {
@@ -31,15 +33,18 @@ public class ChessService {
         sanitizeData(request.username(), request.password(), request.email());
 
         try {
-            userDataBase.getUser(request.username());
+            UserData userData = database.getUser(request.username());
+            if (request.username().equals(userData.username())) {
+                throw new DataAccessException("user doesn't exist");
+            }
         } catch (DataAccessException e) {
             //If getUser() throws an error, then the username is not in the system and can be added
             UserData userData = new UserData(request.username(), request.password(), request.email());
-            userDataBase.createUser(userData);
+            database.createUser(userData);
 
             String authToken = generateToken();
             AuthData authData = new AuthData(authToken, request.username());
-            authDataBase.createAuth(authData);
+            database.createAuth(authData);
 
             return new RegisterResult(request.username(), authToken);
         }
@@ -54,7 +59,7 @@ public class ChessService {
         //check if username and password are correct
         UserData userData;
         try {
-            userData = userDataBase.getUser(request.username());
+            userData = database.getUser(request.username());
         } catch (DataAccessException e) {
             throw new ResponseException(401, "Error: unauthorized");
         }
@@ -63,7 +68,7 @@ public class ChessService {
         }
 
         String authToken = generateToken();
-        authDataBase.createAuth(new AuthData(authToken, request.username()));
+        database.createAuth(new AuthData(authToken, request.username()));
         return new LoginResult(request.username(), authToken);
     }
 
@@ -73,7 +78,7 @@ public class ChessService {
 
         //log out the user
         try {
-            authDataBase.deleteAuth(request.authToken());
+            database.deleteAuth(request.authToken());
         } catch (DataAccessException e) {
             throw new ResponseException(401, "Error: unauthorized");
         }
@@ -88,7 +93,7 @@ public class ChessService {
         //check if user is logged in
         checkForAuthData(request.authToken());
 
-        return new ListGamesResult(gameDatabase.listGames());
+        return new ListGamesResult(database.listGames());
     }
 
     public CreateGameResult createGame(CreateGameRequest request) throws ResponseException {
@@ -100,7 +105,7 @@ public class ChessService {
 
         //create the game
         GameData gameData = new GameData(generateGameID(), null, null, request.gameName(), new ChessGame());
-        gameDatabase.createGame(gameData);
+        database.createGame(gameData);
 
         return new CreateGameResult(gameData.gameID());
     }
@@ -118,8 +123,8 @@ public class ChessService {
         //join the game
         GameData updatedGameData = updateGame(request.playerColor(), gameData, authData);
         try {
-            gameDatabase.deleteGame(gameData.gameID());
-            gameDatabase.createGame(updatedGameData);
+            database.deleteGame(gameData.gameID());
+            database.createGame(updatedGameData);
         } catch (DataAccessException e) {
             throw new ResponseException(401, "Error: unauthorized");
         }
@@ -128,16 +133,16 @@ public class ChessService {
     }
 
     public ClearResult clear(ClearRequest request) {
-        userDataBase.clearAllUserData();
-        authDataBase.clearAllAuthData();
-        gameDatabase.clearAllGameData();
+        database.clearAllUserData();
+        database.clearAllAuthData();
+        database.clearAllGameData();
         return new ClearResult();
     }
 
     private AuthData checkForAuthData(String authToken) throws ResponseException {
         AuthData authData;
         try {
-            authData = authDataBase.getAuth(authToken);
+            authData = database.getAuth(authToken);
         } catch (DataAccessException e) {
             throw new ResponseException(401, "Error: unauthorized");
         }
@@ -147,7 +152,7 @@ public class ChessService {
     private GameData checkForGameData(int gameID) throws ResponseException {
         GameData gameData;
         try {
-            gameData = gameDatabase.getGame(gameID);
+            gameData = database.getGame(gameID);
         } catch (DataAccessException e) {
             throw new ResponseException(400, "Error: bad request");
         }

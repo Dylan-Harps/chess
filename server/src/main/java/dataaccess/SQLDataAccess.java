@@ -13,7 +13,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import static java.sql.Statement.RETURN_GENERATED_KEYS;
+import static java.sql.Types.NULL;
 
 public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
     public SQLDataAccess() throws ResponseException {
@@ -22,16 +22,16 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
 
     private void executeUpdate(String statement, Object... params) throws ResponseException {
         try (var conn = DatabaseManager.getConnection()) {
-            try (var ps = conn.prepareStatement(statement, RETURN_GENERATED_KEYS)) {
+            try (var ps = conn.prepareStatement(statement)) {
                 for (var i = 0; i < params.length; i++) {
                     var param = params[i];
                     if (param instanceof String p) ps.setString(i + 1, p);
                     else if (param instanceof Integer p) ps.setInt(i + 1, p);
                     else if (param instanceof ChessGame p) {
-                        //serialize ChessGame into json
                         var json = new Gson().toJson(p);
                         ps.setString(i + 1, json);
                     }
+                    else if (param == null) ps.setNull(i + 1, NULL);
                 }
                 ps.executeUpdate();
             }
@@ -43,17 +43,16 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
     @Override
     public AuthData getAuth(String authToken) throws DataAccessException {
         try (var conn = DatabaseManager.getConnection()) {
-            var statement = "SELECT authToken, username FROM auth WHERE authToken= ?;";
+            var statement = "SELECT * FROM auth WHERE authToken= ?;";
             try (var ps = conn.prepareStatement(statement)) {
                 ps.setString(1, authToken);
                 try (var rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        return new AuthData(rs.getString("authToken"), rs.getString("username"));
-                    } else {
-                        throw new DataAccessException("Error: unauthorized");
+                        return new AuthData(authToken, rs.getString("username"));
                     }
                 }
             }
+            throw new DataAccessException("Error: unauthorized"); //authToken wasn't found
         } catch (DataAccessException e) {
             throw new DataAccessException(e.getMessage());
         } catch (Exception e) {
@@ -63,7 +62,7 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
 
     @Override
     public void createAuth(AuthData authData) {
-        var statement = "INSERT INTO auth (authToken, username) VALUES (?, ?)";
+        var statement = "INSERT INTO auth VALUES (?, ?)";
         executeUpdate(statement, authData.authToken(), authData.username());
     }
 
@@ -124,7 +123,7 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
     public Collection<GameData> listGames() {
         var result = new ArrayList<GameData>();
         try (var conn = DatabaseManager.getConnection()) {
-            var statement = "SELECT gameID, whiteUsername, blackUsername, gameName, game FROM games;";
+            var statement = "SELECT * FROM games;";
             try (var ps = conn.prepareStatement(statement)) {
                 try (var rs = ps.executeQuery()) {
                     while (rs.next()) {
@@ -140,7 +139,7 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
 
     @Override
     public void createGame(GameData gameData) {
-        var statement = "INSERT INTO games (gameID, whiteUsername, blackUsername, gameName, game) VALUES (?, ?, ?, ?, ?)";
+        var statement = "INSERT INTO games VALUES (?, ?, ?, ?, ?)";
         executeUpdate(statement, gameData.gameID(), gameData.whiteUsername(), gameData.blackUsername(), gameData.gameName(), gameData.game());
     }
 
@@ -163,17 +162,16 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
     @Override
     public UserData getUser(String username) throws DataAccessException {
         try (var conn = DatabaseManager.getConnection()) {
-            var statement = "SELECT username, password, email FROM users WHERE username= ?;";
+            var statement = "SELECT * FROM users WHERE username= ?;";
             try (var ps = conn.prepareStatement(statement)) {
                 ps.setString(1, username);
                 try (var rs = ps.executeQuery()) {
                     if (rs.next()) {
                         return new UserData(username, rs.getString("password"), rs.getString("email"));
-                    } else {
-                        throw new DataAccessException("Error: user doesn't exist");
                     }
                 }
             }
+            throw new DataAccessException("Error: user doesn't exist"); //user is not in the database
         } catch (DataAccessException e) {
             throw new DataAccessException(e.getMessage());
         } catch (Exception e) {
@@ -183,7 +181,7 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
 
     @Override
     public void createUser(UserData userData) {
-        var statement = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
+        var statement = "INSERT INTO users VALUES (?, ?, ?)";
         executeUpdate(statement, userData.username(), userData.password(), userData.email());
     }
 
@@ -224,9 +222,9 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
             """,
             """
             CREATE TABLE IF NOT EXISTS games (
-              gameID int NOT NULL AUTO_INCREMENT,
-              whiteUsername VARCHAR(255) NOT NULL,
-              blackUsername VARCHAR(255) NOT NULL,
+              gameID int NOT NULL,
+              whiteUsername VARCHAR(255) DEFAULT NULL,
+              blackUsername VARCHAR(255) DEFAULT NULL,
               gameName VARCHAR(255) NOT NULL,
               game TEXT NOT NULL,
               PRIMARY KEY (gameID)

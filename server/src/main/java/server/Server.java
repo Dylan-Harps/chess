@@ -6,11 +6,6 @@ import handler.ResponseException;
 import service.*;
 import spark.*;
 
-import java.sql.DriverManager;
-import java.sql.SQLException;
-
-import static java.sql.DriverManager.getConnection;
-
 public class Server {
     private final ChessHandler handler = new ChessHandler();
 
