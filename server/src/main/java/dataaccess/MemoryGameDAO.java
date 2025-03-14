@@ -30,7 +30,7 @@ public class MemoryGameDAO implements GameDAO {
         gameDatabase.remove(getGame(gameID));
     }
 
-    public void clearAllGameData() {
+    public void clear() {
         gameDatabase.clear();
     }
 }

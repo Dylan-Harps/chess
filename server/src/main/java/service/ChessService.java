@@ -6,18 +6,21 @@ import handler.ResponseException;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.UUID;
 
 public class ChessService {
-    SQLDataAccess database = new SQLDataAccess();
+    SQLDataAccess database;
 
-    //comment these out once we're done
-    /*
-    MemoryAuthDAO authDataBase = new MemoryAuthDAO();
-    MemoryUserDAO userDataBase = new MemoryUserDAO();
-    MemoryGameDAO gameDatabase = new MemoryGameDAO();
-    */
+    public ChessService() {
+        this.database = new SQLDataAccess();
+    }
+
+    public ChessService(SQLDataAccess database) {
+        this.database = database;
+    }
+
     private static int id = 1;
 
     private static String generateToken() {
@@ -31,15 +34,15 @@ public class ChessService {
     public RegisterResult register(RegisterRequest request) throws ResponseException {
         //if registerRequest is missing data, throw an exception
         sanitizeData(request.username(), request.password(), request.email());
-
         try {
             UserData userData = database.getUser(request.username());
-            if (request.username().equals(userData.username())) {
+            if (!request.username().equals(userData.username())) {
                 throw new DataAccessException("user doesn't exist");
             }
         } catch (DataAccessException e) {
             //If getUser() throws an error, then the username is not in the system and can be added
-            UserData userData = new UserData(request.username(), request.password(), request.email());
+            String hashedPassword = BCrypt.hashpw(request.password(), BCrypt.gensalt());
+            UserData userData = new UserData(request.username(), hashedPassword, request.email());
             database.createUser(userData);
 
             String authToken = generateToken();
@@ -63,7 +66,7 @@ public class ChessService {
         } catch (DataAccessException e) {
             throw new ResponseException(401, "Error: unauthorized");
         }
-        if (!userData.password().equals(request.password())) {
+        if (!BCrypt.checkpw(request.password(), userData.password())) {
             throw new ResponseException(401, "Error: unauthorized");
         }
 
@@ -78,6 +81,7 @@ public class ChessService {
 
         //log out the user
         try {
+            database.getAuth(request.authToken());
             database.deleteAuth(request.authToken());
         } catch (DataAccessException e) {
             throw new ResponseException(401, "Error: unauthorized");
@@ -133,9 +137,7 @@ public class ChessService {
     }
 
     public ClearResult clear(ClearRequest request) {
-        database.clearAllUserData();
-        database.clearAllAuthData();
-        database.clearAllGameData();
+        database.clear();
         return new ClearResult();
     }
 

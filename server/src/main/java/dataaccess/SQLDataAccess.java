@@ -25,17 +25,21 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
             try (var ps = conn.prepareStatement(statement)) {
                 for (var i = 0; i < params.length; i++) {
                     var param = params[i];
-                    if (param instanceof String p) ps.setString(i + 1, p);
-                    else if (param instanceof Integer p) ps.setInt(i + 1, p);
-                    else if (param instanceof ChessGame p) {
-                        var json = new Gson().toJson(p);
-                        ps.setString(i + 1, json);
+                    switch (param) {
+                        case String p -> ps.setString(i + 1, p);
+                        case Integer p -> ps.setInt(i + 1, p);
+                        case ChessGame p -> {
+                            var json = new Gson().toJson(p);
+                            ps.setString(i + 1, json);
+                        }
+                        case null -> ps.setNull(i + 1, NULL);
+                        default -> {
+                        }
                     }
-                    else if (param == null) ps.setNull(i + 1, NULL);
                 }
                 ps.executeUpdate();
             }
-        } catch (SQLException e) {
+        } catch (SQLException | DataAccessException e) {
             throw new ResponseException(500, String.format("unable to update database: %s, %s", statement, e.getMessage()));
         }
     }
@@ -69,17 +73,12 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
     @Override
     public void deleteAuth(String authToken) throws DataAccessException {
         try {
+            getAuth(authToken);
             var statement = "DELETE FROM auth WHERE authToken=?";
             executeUpdate(statement, authToken);
         } catch(Exception e) {
             throw new DataAccessException("Error: unauthorized");
         }
-    }
-
-    @Override
-    public void clearAllAuthData() {
-        var statement = "TRUNCATE auth";
-        executeUpdate(statement);
     }
 
     private GameData readGameFromJson(ResultSet rs) {
@@ -146,17 +145,12 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
     @Override
     public void deleteGame(int gameID) throws DataAccessException {
         try {
+            getGame(gameID);
             var statement = "DELETE FROM games WHERE gameID=?";
             executeUpdate(statement, gameID);
         } catch(Exception e) {
             throw new DataAccessException("Error: game doesn't exist");
         }
-    }
-
-    @Override
-    public void clearAllGameData() {
-        var statement = "TRUNCATE games";
-        executeUpdate(statement);
     }
 
     @Override
@@ -186,21 +180,29 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
     }
 
     @Override
-    public void clearAllUserData() {
+    public void clear() {
         var statement = "TRUNCATE users";
+        executeUpdate(statement);
+        statement = "TRUNCATE auth";
+        executeUpdate(statement);
+        statement = "TRUNCATE games";
         executeUpdate(statement);
     }
 
     private void configureDatabase() throws ResponseException {
-        DatabaseManager.createDatabase();
-        try (var conn = DatabaseManager.getConnection()) {
-            for (var statement : createStatements) {
-                try (var preparedStatement = conn.prepareStatement(statement)) {
-                    preparedStatement.executeUpdate();
+        try {
+            DatabaseManager.createDatabase();
+            try (var conn = DatabaseManager.getConnection()) {
+                for (var statement : createStatements) {
+                    try (var preparedStatement = conn.prepareStatement(statement)) {
+                        preparedStatement.executeUpdate();
+                    }
                 }
+            } catch (SQLException ex) {
+                throw new ResponseException(500, String.format("Unable to configure database: %s", ex.getMessage()));
             }
-        } catch (SQLException ex) {
-            throw new ResponseException(500, String.format("Unable to configure database: %s", ex.getMessage()));
+        } catch (DataAccessException e) {
+            throw new ResponseException(500, String.format("Unable to configure database: %s", e.getMessage()));
         }
     }
 
