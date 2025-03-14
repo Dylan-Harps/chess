@@ -12,8 +12,8 @@ import service.*;
 public class DaoTests {
     public static SQLDataAccess database = new SQLDataAccess();
     public static ChessService existingService = new ChessService(database);
-    public static String gameJson = "{\"activeTeam\":\"WHITE\",\"board\":{\"board\":[[{\"team\":\"WHITE\",\"type\":\"ROOK\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"WHITE\",\"type\":\"KNIGHT\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"WHITE\",\"type\":\"BISHOP\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"WHITE\",\"type\":\"QUEEN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"WHITE\",\"type\":\"KING\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"WHITE\",\"type\":\"BISHOP\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"WHITE\",\"type\":\"KNIGHT\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"WHITE\",\"type\":\"ROOK\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false}],[{\"team\":\"WHITE\",\"type\":\"PAWN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"WHITE\",\"type\":\"PAWN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"WHITE\",\"type\":\"PAWN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"WHITE\",\"type\":\"PAWN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"WHITE\",\"type\":\"PAWN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"WHITE\",\"type\":\"PAWN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"WHITE\",\"type\":\"PAWN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"WHITE\",\"type\":\"PAWN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false}],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null],[{\"team\":\"BLACK\",\"type\":\"PAWN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"BLACK\",\"type\":\"PAWN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"BLACK\",\"type\":\"PAWN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"BLACK\",\"type\":\"PAWN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"BLACK\",\"type\":\"PAWN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"BLACK\",\"type\":\"PAWN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"BLACK\",\"type\":\"PAWN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"BLACK\",\"type\":\"PAWN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false}],[{\"team\":\"BLACK\",\"type\":\"ROOK\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"BLACK\",\"type\":\"KNIGHT\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"BLACK\",\"type\":\"BISHOP\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"BLACK\",\"type\":\"QUEEN\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"BLACK\",\"type\":\"KING\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"BLACK\",\"type\":\"BISHOP\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"BLACK\",\"type\":\"KNIGHT\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false},{\"team\":\"BLACK\",\"type\":\"ROOK\",\"hasMoved\":false,\"didDoubleMoveLastTurn\":false}]]}}";
     public static ChessGame existingGame;
+    public static String gameJson;
     public static String existingUsername = "username";
     public static String existingPassword = "password";
     public static String existingEmail = "email";
@@ -21,12 +21,13 @@ public class DaoTests {
     public static String existingAuthToken;
     public static int existingGameID;
 
-    @BeforeAll
-    public static void setUp() {
+    @BeforeEach
+    public void setUp() {
         database.clear();
         existingAuthToken = existingService.register(new RegisterRequest(existingUsername, existingPassword, existingEmail)).authToken();
         existingGame = new ChessGame();
         existingGameID = existingService.createGame(new CreateGameRequest(existingAuthToken, existingGameName)).gameID();
+        gameJson = new Gson().toJson(existingGame);
     }
 
     @Test
