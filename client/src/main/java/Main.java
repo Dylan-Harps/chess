@@ -2,7 +2,7 @@ import chess.*;
 import ui.ServerFacade;
 
 public class Main {
-    ServerFacade serverFacade = new ServerFacade();
+    ServerFacade serverFacade = new ServerFacade("http://localhost:3306");
 
     public Main() throws Exception {
     }
