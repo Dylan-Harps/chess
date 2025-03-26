@@ -5,13 +5,18 @@ import endpoints.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ServiceTests {
+    public static ChessService chessService = new ChessService();
+
+    @BeforeEach
+    public void reset() {
+        chessService.clear(new ClearRequest());
+    }
 
     //register
     @Test
     @Order(1)
     @DisplayName("Register Normal")
     public void registerNormal() {
-        ChessService chessService = new ChessService();
         RegisterRequest request = new RegisterRequest("myUsername", "myPassword", "myEmail@email.com");
         RegisterResult result = chessService.register(request);
 
@@ -23,7 +28,6 @@ public class ServiceTests {
     @Order(2)
     @DisplayName("Register Empty Username")
     public void registerEmptyUsername() {
-        ChessService chessService = new ChessService();
         RegisterRequest request = new RegisterRequest("", "myPassword", "myEmail@email.com");
 
         Assertions.assertThrows(Exception.class, () -> chessService.register(request), "register: does not throw bad request");
@@ -33,7 +37,6 @@ public class ServiceTests {
     @Order(3)
     @DisplayName("Register Null Username")
     public void registerNullUsername() {
-        ChessService chessService = new ChessService();
         RegisterRequest request = new RegisterRequest(null, "myPassword", "myEmail@email.com");
 
         Assertions.assertThrows(Exception.class, () -> chessService.register(request), "register: does not throw bad request");
@@ -43,7 +46,6 @@ public class ServiceTests {
     @Order(4)
     @DisplayName("Register Username Already Taken")
     public void registerUsernameAlreadyTaken() {
-        ChessService chessService = new ChessService();
         RegisterRequest request1 = new RegisterRequest("myUsername", "myPassword", "myEmail@email.com");
         RegisterResult result1 = chessService.register(request1);
 
@@ -57,7 +59,6 @@ public class ServiceTests {
     @Order(5)
     @DisplayName("Logout Normal")
     public void logoutNormal() {
-        ChessService chessService = new ChessService();
         //register
         RegisterRequest request0 = new RegisterRequest("myUsername", "myPassword", "myEmail@email.com");
         RegisterResult result0 = chessService.register(request0);
@@ -73,7 +74,6 @@ public class ServiceTests {
     @Order(6)
     @DisplayName("Logout Twice")
     public void logoutTwice() {
-        ChessService chessService = new ChessService();
         //register
         RegisterRequest request0 = new RegisterRequest("myUsername", "myPassword", "myEmail@email.com");
         RegisterResult result0 = chessService.register(request0);
@@ -90,7 +90,6 @@ public class ServiceTests {
     @Order(7)
     @DisplayName("Login Normal")
     public void loginNormal() {
-        ChessService chessService = new ChessService();
         //register
         RegisterRequest request0 = new RegisterRequest("myUsername", "myPassword", "myEmail@email.com");
         RegisterResult result0 = chessService.register(request0);
@@ -111,7 +110,6 @@ public class ServiceTests {
     @Order(8)
     @DisplayName("Login Wrong Password")
     public void loginWrongPassword() {
-        ChessService chessService = new ChessService();
         //register
         RegisterRequest request0 = new RegisterRequest("myUsername", "myPassword", "myEmail@email.com");
         RegisterResult result0 = chessService.register(request0);
@@ -131,8 +129,6 @@ public class ServiceTests {
     @Order(9)
     @DisplayName("Create Game")
     public void createGame() {
-        ChessService chessService = new ChessService();
-
         //register user
         RegisterRequest request0 = new RegisterRequest("myUsername", "myPassword", "myEmail@email.com");
         RegisterResult result0 = chessService.register(request0);
@@ -149,8 +145,6 @@ public class ServiceTests {
     @Order(9)
     @DisplayName("Create Game Logged Out")
     public void createGameLoggedOut() {
-        ChessService chessService = new ChessService();
-
         //register user
         RegisterRequest request0 = new RegisterRequest("myUsername", "myPassword", "myEmail@email.com");
         RegisterResult result0 = chessService.register(request0);
@@ -171,8 +165,6 @@ public class ServiceTests {
     @Order(10)
     @DisplayName("Add and List Games")
     public void listGames() {
-        ChessService chessService = new ChessService();
-
         //register user
         RegisterRequest request0 = new RegisterRequest("myUsername", "myPassword", "myEmail@email.com");
         RegisterResult result0 = chessService.register(request0);
@@ -195,8 +187,6 @@ public class ServiceTests {
     @Order(11)
     @DisplayName("List Games After Clear")
     public void listGamesAfterClear() {
-        ChessService chessService = new ChessService();
-
         //register user
         RegisterRequest request0 = new RegisterRequest("myUsername", "myPassword", "myEmail@email.com");
         RegisterResult result0 = chessService.register(request0);
@@ -231,8 +221,6 @@ public class ServiceTests {
     @Order(12)
     @DisplayName("Clear Normal")
     public void clearNormal() {
-        ChessService chessService = new ChessService();
-
         //register user
         RegisterRequest request0 = new RegisterRequest("myUsername", "myPassword", "myEmail@email.com");
         RegisterResult result0 = chessService.register(request0);
@@ -255,8 +243,6 @@ public class ServiceTests {
     @Order(13)
     @DisplayName("Multiple Clears")
     public void multipleClears() {
-        ChessService chessService = new ChessService();
-
         //register user
         RegisterRequest request0 = new RegisterRequest("myUsername", "myPassword", "myEmail@email.com");
         RegisterResult result0 = chessService.register(request0);

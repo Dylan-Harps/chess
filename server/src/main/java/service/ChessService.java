@@ -82,7 +82,7 @@ public class ChessService {
 
         //log out the user
         try {
-            database.getAuth(request.authToken());
+            checkForAuthData(request.authToken());
             database.deleteAuth(request.authToken());
         } catch (DataAccessException e) {
             throw new ResponseException(401, "Error: unauthorized");
