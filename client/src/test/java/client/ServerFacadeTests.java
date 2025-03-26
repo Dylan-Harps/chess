@@ -13,6 +13,7 @@ public class ServerFacadeTests {
     private static String username = "username";
     private static String password = "password";
     private static String email = "email";
+    private static String gameName = "gameName";
 
     @BeforeAll
     public static void init() {
@@ -45,4 +46,44 @@ public class ServerFacadeTests {
         Assertions.assertFalse(result.authToken().isEmpty());
     }
 
+    @Test
+    public void loginTest() {
+        facade.registerUser(new RegisterRequest(username, password, email));
+        LoginResult result = facade.loginUser(new LoginRequest(username, password));
+        Assertions.assertNotNull(result.username());
+        Assertions.assertNotNull(result.authToken());
+    }
+
+    @Test
+    public void logoutTest() {
+        String authToken = facade.registerUser(new RegisterRequest(username, password, email)).authToken();
+        LogoutResult result = facade.logoutUser(new LogoutRequest(authToken));
+        Assertions.assertThrows(Exception.class, () -> facade.logoutUser(new LogoutRequest(authToken)));
+    }
+
+    @Test
+    public void listGamesTest() {
+        String authToken = facade.registerUser(new RegisterRequest(username, password, email)).authToken();
+        ListGamesResult result = facade.listGames(new ListGamesRequest(authToken));
+        Assertions.assertNotNull(result.games());
+    }
+
+    @Test
+    public void createGameTest() {
+        String authToken = facade.registerUser(new RegisterRequest(username, password, email)).authToken();
+        CreateGameResult result = facade.createGame(new CreateGameRequest(authToken, gameName));
+        Assertions.assertTrue(result.gameID() > 0);
+    }
+
+    @Test
+    public void joinGameTest() {
+        String authToken = facade.registerUser(new RegisterRequest(username, password, email)).authToken();
+        int gameID = facade.createGame(new CreateGameRequest(authToken, gameName)).gameID();
+        Assertions.assertDoesNotThrow(()-> facade.joinGame(new JoinGameRequest(authToken, "WHITE", gameID)));
+    }
+
+    @Test
+    public void clearTest() {
+        Assertions.assertDoesNotThrow(()-> facade.clear(new ClearRequest()));
+    }
 }

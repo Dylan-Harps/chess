@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.Authenticator;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
@@ -45,7 +46,7 @@ public class ServerFacade {
         return this.makeRequest("POST", path, request, CreateGameResult.class);
     }
 
-    public JoinGameResult joinGame(CreateGameRequest request) throws ResponseException {
+    public JoinGameResult joinGame(JoinGameRequest request) throws ResponseException {
         var path = "/game";
         return this.makeRequest("PUT", path, request, JoinGameResult.class);
     }
