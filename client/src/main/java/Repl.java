@@ -19,7 +19,7 @@ public class Repl {
 
             try {
                 result = client.eval(line);
-                System.out.print(SET_TEXT_COLOR_BLUE + result);
+                System.out.print(result);
             } catch (Throwable e) {
                 var msg = e.toString();
                 System.out.print(msg);
@@ -29,6 +29,6 @@ public class Repl {
     }
 
     private void printPrompt() {
-        System.out.print("\n" + RESET_TEXT_COLOR + ">>> " + SET_TEXT_COLOR_GREEN);
+        System.out.print("\n" + RESET_TEXT_COLOR + ">>> ");
     }
 }
