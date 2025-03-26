@@ -64,6 +64,7 @@ public class ServerFacadeTests {
     @Test
     public void listGamesTest() {
         String authToken = facade.registerUser(new RegisterRequest(username, password, email)).authToken();
+        facade.createGame(new CreateGameRequest(authToken, gameName));
         ListGamesResult result = facade.listGames(new ListGamesRequest(authToken));
         Assertions.assertNotNull(result.games());
     }
