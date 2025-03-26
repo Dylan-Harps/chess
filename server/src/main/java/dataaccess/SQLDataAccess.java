@@ -3,7 +3,7 @@ package dataaccess;
 import chess.ChessGame;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import handler.ResponseException;
+import endpoints.ResponseException;
 import model.AuthData;
 import model.GameData;
 import model.UserData;

@@ -6,12 +6,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.Authenticator;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
-import handler.ResponseException;
-import service.*;
+import endpoints.ResponseException;
+import endpoints.*;
 
 
 public class ServerFacade {

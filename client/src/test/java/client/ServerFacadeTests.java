@@ -2,8 +2,8 @@ package client;
 
 import org.junit.jupiter.api.*;
 import server.Server;
-import service.*;
 import ui.ServerFacade;
+import endpoints.*;
 
 
 public class ServerFacadeTests {

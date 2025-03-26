@@ -2,11 +2,12 @@ package service;
 
 import chess.ChessGame;
 import dataaccess.*;
-import handler.ResponseException;
+import endpoints.ResponseException;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
 import org.mindrot.jbcrypt.BCrypt;
+import endpoints.*;
 
 import java.util.UUID;
 

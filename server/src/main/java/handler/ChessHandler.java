@@ -1,7 +1,9 @@
 package handler;
 
+import endpoints.ResponseException;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import service.*;
+import endpoints.*;
 
 @WebSocket
 public class ChessHandler {

@@ -1,6 +1,7 @@
 package service;
 
 import org.junit.jupiter.api.*;
+import endpoints.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ServiceTests {

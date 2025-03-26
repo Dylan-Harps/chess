@@ -2,9 +2,9 @@ package server;
 
 import com.google.gson.Gson;
 import handler.ChessHandler;
-import handler.ResponseException;
-import service.*;
+import endpoints.ResponseException;
 import spark.*;
+import endpoints.*;
 
 public class Server {
     private final ChessHandler handler = new ChessHandler();

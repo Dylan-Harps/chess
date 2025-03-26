@@ -1,4 +1,4 @@
-package handler;
+package endpoints;
 
 import com.google.gson.Gson;
 

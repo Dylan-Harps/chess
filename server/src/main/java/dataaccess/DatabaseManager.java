@@ -1,7 +1,5 @@
 package dataaccess;
 
-import handler.ResponseException;
-
 import java.sql.*;
 import java.util.Properties;
 
