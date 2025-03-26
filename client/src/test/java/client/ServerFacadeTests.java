@@ -10,10 +10,10 @@ public class ServerFacadeTests {
 
     private static Server server;
     private static ServerFacade facade;
-    private static String username = "username";
-    private static String password = "password";
-    private static String email = "email";
-    private static String gameName = "gameName";
+    private static final String username = "username";
+    private static final String password = "password";
+    private static final String email = "email";
+    private static final String gameName = "gameName";
 
     @BeforeAll
     public static void init() {
