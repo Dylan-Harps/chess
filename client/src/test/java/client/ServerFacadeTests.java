@@ -35,11 +35,6 @@ public class ServerFacadeTests {
 
 
     @Test
-    public void sampleTest() {
-        Assertions.assertTrue(true);
-    }
-
-    @Test
     public void registerTest() {
         RegisterResult result = facade.registerUser(new RegisterRequest(username, password, email));
         Assertions.assertFalse(result.username().isEmpty());
@@ -65,7 +60,7 @@ public class ServerFacadeTests {
     public void listGamesTest() {
         String authToken = facade.registerUser(new RegisterRequest(username, password, email)).authToken();
         facade.createGame(new CreateGameRequest(authToken, gameName));
-        ListGamesResult result = facade.listGames(new ListGamesRequest(authToken));
+        ListGamesResult result = facade.listGames(new ListGamesRequest(authToken)); //for some reason, this is calling createGame, catching the error only because it doesn't have a gameName
         Assertions.assertNotNull(result.games());
     }
 
