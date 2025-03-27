@@ -11,7 +11,7 @@ public class Main {
         var piece = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN);
         System.out.println("♕ 240 Chess Client: " + piece);
 
-        String port = "3306";
+        String port = "8080"; //3306
         if (args.length == 1) {
             port = args[0];
         }

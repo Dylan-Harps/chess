@@ -22,7 +22,7 @@ public class Repl {
                 System.out.print(result);
             } catch (Throwable e) {
                 var msg = e.toString();
-                System.out.print(msg);
+                System.out.print(SET_TEXT_COLOR_RED + msg + RESET_TEXT_COLOR);
             }
         }
         System.out.println();

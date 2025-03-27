@@ -36,6 +36,7 @@ public class Server {
     }
 
     private Object register(Request request, Response response) throws ResponseException {
+        System.out.println("entered Server.register");
         RegisterRequest registerRequest = new Gson().fromJson(request.body(), RegisterRequest.class);
         RegisterResult registerResult = handler.register(registerRequest);
         return new Gson().toJson(registerResult);
