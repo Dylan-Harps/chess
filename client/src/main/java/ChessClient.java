@@ -1,4 +1,6 @@
 import chess.ChessGame;
+import chess.ChessPiece;
+import chess.ChessPosition;
 import endpoints.*;
 import model.GameData;
 import ui.ServerFacade;
@@ -15,8 +17,8 @@ public class ChessClient {
     private boolean isLoggedIn = false;
     //store gamesList
     Integer nextClientSideGameID = 1;
-    private Map<Integer, Integer> myGames = new TreeMap<>(); //first int is the client id, second int is the db id
-    private Map<Integer, Integer> otherGames = new TreeMap<>();
+    private Map<Integer, Integer> gameIdList = new TreeMap<>(); //<client id, database id>
+    private Collection<GameData> allGames = null;
 
     public ChessClient(String port) {
         serverFacade = new ServerFacade("http://localhost:" + port);
@@ -35,7 +37,7 @@ public class ChessClient {
                 case "list" -> listGames();
                 case "join" -> joinGame(params);
                 case "observe" -> observeGame(params);
-                case "quit" -> "quit";
+                case "quit" -> quit();
                 default -> help();
             };
         } catch (ResponseException ex) {
@@ -49,8 +51,8 @@ public class ChessClient {
             helpMenu = """
                     Available options are:
                     register <USERNAME> <PASSWORD> <EMAIL> - create a new account
-                    login <USERNAME> <PASSWORD> - start playing
-                    quit - quit playing
+                    login <USERNAME> <PASSWORD> - sign in to start playing
+                    quit - exit program
                     help - list available commands
                     """;
         } else {
@@ -67,22 +69,29 @@ public class ChessClient {
         return helpMenu;
     }
 
+    public String quit() {
+        if (isLoggedIn) {
+            logout();
+        }
+        return "quit";
+    }
+
     public String login(String... params) throws ResponseException {
         if (params.length != 2) {
             throw new ResponseException(400, "Expected: login <USERNAME> <PASSWORD>");
         }
+        if (isLoggedIn && this.username.equals(params[0])) {
+            throw new ResponseException(400, "You are already logged in");
+        }
         try {
             String username = params[0];
             String password = params[1];
-            if (isLoggedIn && this.username.equals(username)) {
-                throw new ResponseException(400, "You are already logged in");
-            }
             authToken = serverFacade.loginUser(new LoginRequest(username, password)).authToken();
             isLoggedIn = true;
             this.username = username;
             return "Logged in as " + username;
         } catch (ResponseException e) {
-            throw e;
+            throw new ResponseException(400, "Wrong username or password");
         }
     }
 
@@ -98,7 +107,7 @@ public class ChessClient {
             isLoggedIn = true;
             return "Logged in as " + username;
         } catch (ResponseException e) {
-            throw e;
+            throw new ResponseException(400, "That username is already taken");
         }
     }
 
@@ -123,7 +132,8 @@ public class ChessClient {
         try {
             String gameName = params[0];
             int externalGameID = serverFacade.createGame(new CreateGameRequest(authToken, gameName)).gameID();
-            myGames.put(nextClientSideGameID++, externalGameID);
+            gameIdList.put(nextClientSideGameID++, externalGameID);
+            allGames = serverFacade.listGames(new ListGamesRequest(authToken)).games();
             return "Created game with the name " + gameName;
         } catch (ResponseException e) {
             throw e;
@@ -133,39 +143,15 @@ public class ChessClient {
     public String listGames() throws ResponseException {
         assertLoggedIn();
         try {
-            var games = serverFacade.listGames(new ListGamesRequest(authToken)).games();
-            var result = new StringBuilder();
+            var listGames = serverFacade.listGames(new ListGamesRequest(authToken)).games();
+            var result = new StringBuilder().append("Available games:\n");
+            allGames = listGames;
 
-            //list the client-made games first
-            if (!myGames.isEmpty()) {
-                result.append("Recent Games:\n");
-            }
-            for (var entry : myGames.entrySet()) {
-                int myID = entry.getKey();
-                int dbID = entry.getValue();
-                GameData temp = null;
-                List<GameData> gamesToRemove = new ArrayList<>();
-
-                for (var dbGame : games) {
-                    if (dbGame.gameID() == dbID) {
-                        temp = dbGame;
-                        gamesToRemove.add(dbGame);
-                    }
-                }
-                games.removeAll(gamesToRemove); //exclude recent games from the rest of the list
-                result.append(myID).append(". ").append(temp.gameName()).append('\n');
-            }
-
-            //list the rest of the games
-            if (!myGames.isEmpty()) {
-                result.append("Other Games:\n");
-            }
-            otherGames.clear();
-            Integer clientGameID = nextClientSideGameID;
-            for (var game : games) {
-                otherGames.put(clientGameID, game.gameID());
-                result.append(clientGameID).append(". ").append(game.gameName()).append('\n');
-                ++clientGameID;
+            nextClientSideGameID = 1;
+            for (var dbGame : listGames) {
+                gameIdList.put(nextClientSideGameID, dbGame.gameID());
+                result.append(nextClientSideGameID).append(". ").append(dbGame.gameName()).append('\n');
+                ++nextClientSideGameID;
             }
 
             return result.toString();
@@ -176,17 +162,53 @@ public class ChessClient {
 
     public String joinGame(String... params) throws ResponseException {
         assertLoggedIn();
-        //TODO
-        // remember that all input (including color) will be lowercase
-        return null;
+        //sanitize input
+        if (params.length != 2) {
+            throw new ResponseException(400, "Expected: join <ID> <WHITE|BLACK>");
+        }
+        int id;
+        try {
+            id = Integer.parseInt(params[0]);
+        } catch (Exception e) {
+            throw new ResponseException(400, "<ID> should be an integer");
+        }
+        String teamColor = params[1].toUpperCase();
+        if (!(teamColor.equals("WHITE") || teamColor.equals("BLACK"))) {
+            throw new ResponseException(400, "<WHITE|BLACK> should be either WHITE or BLACK");
+        }
+        if (allGames == null) {
+            listGames();
+        }
+
+        try {
+            serverFacade.joinGame(new JoinGameRequest(authToken, teamColor, selectGameID(id)));
+        } catch (Exception e) {
+            if (e.getMessage().equals("Invalid game ID")) {
+                throw e;
+            }
+            throw new ResponseException(400, teamColor + " is already taken"); //FIXME: this isn't working???
+        }
+
+        return displayGame(selectGameID(id), teamColor);
     }
 
     public String observeGame(String... params) throws ResponseException {
         assertLoggedIn();
-        ChessGame.TeamColor perspective;
-        //TODO
-        // remember that all input (including color) will be lowercase
-        return null;
+        //sanitize input
+        if (params.length != 1) {
+            throw new ResponseException(400, "Expected: observe <ID>");
+        }
+        int id;
+        try {
+            id = Integer.parseInt(params[0]);
+        } catch (Exception e) {
+            throw new ResponseException(400, "<ID> should be an integer");
+        }
+        if (allGames == null) {
+            listGames();
+        }
+
+        return displayGame(selectGameID(id), "WHITE");
     }
 
     private void assertLoggedIn() throws ResponseException {
@@ -195,13 +217,83 @@ public class ChessClient {
         }
     }
 
-    private GameData selectGame(int clientID) {
-        //TODO
-        return null;
+    private int selectGameID(int clientID) throws ResponseException {
+        try {
+            return gameIdList.get(clientID);
+        } catch (Exception e){
+            throw new ResponseException(400, "Invalid game ID");
+        }
     }
 
-    private String displayGame(GameData gameData) {
-        //TODO
-        return null;
+    private GameData selectGameData(int dbID) {
+        GameData chosenGame = null;
+        for (var g : allGames) {
+            if (g.gameID() == dbID) {
+                chosenGame = g;
+            }
+        }
+        return chosenGame;
+    }
+
+    private String displayGame(int dbID, String teamColor) {
+        GameData chosenGame = selectGameData(dbID);
+
+        //create and set up the board with labels
+        String[][] tempBoard = new String[10][10];
+        //corners
+        tempBoard[0][0] = SET_BG_COLOR_LIGHT_GREY + "   " + RESET_BG_COLOR;
+        tempBoard[0][9] = SET_BG_COLOR_LIGHT_GREY + "   " + RESET_BG_COLOR;
+        tempBoard[9][0] = SET_BG_COLOR_LIGHT_GREY + "   " + RESET_BG_COLOR;
+        tempBoard[9][9] = SET_BG_COLOR_LIGHT_GREY + "   " + RESET_BG_COLOR;
+        //column labels (letters)
+        char col = 'a';
+        for (int i = 1; i <= 8; ++i) {
+            tempBoard[0][i] = SET_BG_COLOR_LIGHT_GREY + " " + String.valueOf(col) + " " + RESET_BG_COLOR;
+            tempBoard[9][i] = SET_BG_COLOR_LIGHT_GREY + " " + String.valueOf(col) + " " + RESET_BG_COLOR;
+            ++col;
+        }
+        //row labels (numbers)
+        for (int i = 1; i <= 8; ++i) {
+            tempBoard[i][0] = SET_BG_COLOR_LIGHT_GREY + " " + String.valueOf(i) + " " + RESET_BG_COLOR;
+            tempBoard[i][9] = SET_BG_COLOR_LIGHT_GREY + " " + String.valueOf(i) + " " + RESET_BG_COLOR;
+        }
+
+        //put pieces onto the board
+        for (int r = 1; r <= 8; ++r) {
+            for (int c = 1; c <= 8; ++c) {
+                ChessPiece p = chosenGame.game().getBoard().getPiece(new ChessPosition(r, c));
+                tempBoard[9-r][9-c] = squareColor(r, c) + pieceColor(p) + RESET_BG_COLOR + RESET_TEXT_COLOR;
+            }
+        }
+
+        //finally turn tempBoard into a result, reversing it if viewing from black's perspective
+        StringBuilder result = new StringBuilder();
+        result.append(chosenGame.gameName()).append(":\n");
+        int start = (teamColor.equals("WHITE") ? 0 : 9);
+        int direction = (teamColor.equals("WHITE") ? 1 : -1);
+        for (int r = start; withinBounds(r); r += direction) {
+            for (int c = start; withinBounds(c); c += direction) {
+                result.append(tempBoard[r][c]);
+            }
+            result.append("\n");
+        }
+        return result.toString();
+    }
+
+    private boolean withinBounds(int i) {
+        return i >= 0 && i <= 9;
+    }
+
+    private String squareColor(int row, int col) {
+        return (row + col) % 2 == 0 ? SET_BG_COLOR_WHITE : SET_BG_COLOR_BLACK;
+        //return (row + col) % 2 == 0 ? SET_BG_COLOR_WHITE + SET_TEXT_COLOR_BLACK : SET_BG_COLOR_BLACK + SET_TEXT_COLOR_WHITE;
+    }
+
+    private String pieceColor(ChessPiece p) {
+        if (p == null) {
+            return "   ";
+        }
+        String color = (p.getTeamColor() == ChessGame.TeamColor.WHITE ? SET_TEXT_COLOR_RED : SET_TEXT_COLOR_BLUE);
+        return " " + color + p.toString().toUpperCase() + " ";
     }
 }
