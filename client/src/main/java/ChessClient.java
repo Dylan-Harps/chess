@@ -186,7 +186,7 @@ public class ChessClient {
             if (e.getMessage().equals("Invalid game ID")) {
                 throw e;
             }
-            throw new ResponseException(400, teamColor + " is already taken"); //FIXME: this isn't working???
+            throw new ResponseException(400, teamColor + " is already taken");
         }
 
         return displayGame(selectGameID(id), teamColor);

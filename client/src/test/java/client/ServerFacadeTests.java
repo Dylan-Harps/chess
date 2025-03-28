@@ -10,10 +10,10 @@ public class ServerFacadeTests {
 
     private static Server server;
     private static ServerFacade facade;
-    private static final String username = "username";
-    private static final String password = "password";
-    private static final String email = "email";
-    private static final String gameName = "gameName";
+    private static final String existingUsername = "username";
+    private static final String existingPassword = "password";
+    private static final String existingEmail = "email";
+    private static final String existingGameName = "gameName";
 
     @BeforeAll
     public static void init() {
@@ -36,50 +36,95 @@ public class ServerFacadeTests {
 
     @Test
     public void registerTest() {
-        RegisterResult result = facade.registerUser(new RegisterRequest(username, password, email));
+        RegisterResult result = facade.registerUser(new RegisterRequest(existingUsername, existingPassword, existingEmail));
         Assertions.assertFalse(result.username().isEmpty());
         Assertions.assertFalse(result.authToken().isEmpty());
     }
 
     @Test
+    public void badRegisterTest() {
+        //register the same person twice
+        RegisterResult result = facade.registerUser(new RegisterRequest(existingUsername, existingPassword, existingEmail));
+        Assertions.assertThrows(Exception.class, () -> facade.registerUser(new RegisterRequest(existingUsername, existingPassword, existingEmail)));
+    }
+
+    @Test
     public void loginTest() {
-        facade.registerUser(new RegisterRequest(username, password, email));
-        LoginResult result = facade.loginUser(new LoginRequest(username, password));
+        facade.registerUser(new RegisterRequest(existingUsername, existingPassword, existingEmail));
+        LoginResult result = facade.loginUser(new LoginRequest(existingUsername, existingPassword));
         Assertions.assertNotNull(result.username());
         Assertions.assertNotNull(result.authToken());
     }
 
     @Test
+    public void badLoginTest() {
+        facade.registerUser(new RegisterRequest(existingUsername, existingPassword, existingEmail));
+        Assertions.assertThrows(Exception.class, () -> facade.loginUser(new LoginRequest("WrongUsername", existingPassword)));
+    }
+
+    @Test
     public void logoutTest() {
-        String authToken = facade.registerUser(new RegisterRequest(username, password, email)).authToken();
+        String authToken = facade.registerUser(new RegisterRequest(existingUsername, existingPassword, existingEmail)).authToken();
         LogoutResult result = facade.logoutUser(new LogoutRequest(authToken));
         Assertions.assertThrows(Exception.class, () -> facade.logoutUser(new LogoutRequest(authToken)));
     }
 
     @Test
+    public void badLogoutTest() {
+        String authToken = facade.registerUser(new RegisterRequest(existingUsername, existingPassword, existingEmail)).authToken();
+        Assertions.assertThrows(Exception.class, () -> facade.logoutUser(new LogoutRequest("WrongAuthToken")));
+    }
+
+    @Test
     public void listGamesTest() {
-        String authToken = facade.registerUser(new RegisterRequest(username, password, email)).authToken();
-        facade.createGame(new CreateGameRequest(authToken, gameName));
-        ListGamesResult result = facade.listGames(new ListGamesRequest(authToken)); //for some reason, this is calling createGame, catching the error only because it doesn't have a gameName
+        String authToken = facade.registerUser(new RegisterRequest(existingUsername, existingPassword, existingEmail)).authToken();
+        facade.createGame(new CreateGameRequest(authToken, existingGameName));
+        ListGamesResult result = facade.listGames(new ListGamesRequest(authToken));
         Assertions.assertNotNull(result.games());
     }
 
     @Test
+    public void badListGamesTest() {
+        String authToken = facade.registerUser(new RegisterRequest(existingUsername, existingPassword, existingEmail)).authToken();
+        facade.createGame(new CreateGameRequest(authToken, existingGameName));
+        Assertions.assertThrows(Exception.class, () -> facade.listGames(new ListGamesRequest("WrongAuthToken")));
+    }
+
+    @Test
     public void createGameTest() {
-        String authToken = facade.registerUser(new RegisterRequest(username, password, email)).authToken();
-        CreateGameResult result = facade.createGame(new CreateGameRequest(authToken, gameName));
+        String authToken = facade.registerUser(new RegisterRequest(existingUsername, existingPassword, existingEmail)).authToken();
+        CreateGameResult result = facade.createGame(new CreateGameRequest(authToken, existingGameName));
         Assertions.assertTrue(result.gameID() > 0);
     }
 
     @Test
+    public void badCreateGameTest() {
+        String authToken = facade.registerUser(new RegisterRequest(existingUsername, existingPassword, existingEmail)).authToken();
+        Assertions.assertThrows(Exception.class, () -> facade.createGame(new CreateGameRequest("WrongAuthToken", existingGameName)));
+    }
+
+    @Test
     public void joinGameTest() {
-        String authToken = facade.registerUser(new RegisterRequest(username, password, email)).authToken();
-        int gameID = facade.createGame(new CreateGameRequest(authToken, gameName)).gameID();
+        String authToken = facade.registerUser(new RegisterRequest(existingUsername, existingPassword, existingEmail)).authToken();
+        int gameID = facade.createGame(new CreateGameRequest(authToken, existingGameName)).gameID();
         Assertions.assertDoesNotThrow(()-> facade.joinGame(new JoinGameRequest(authToken, "WHITE", gameID)));
     }
 
     @Test
+    public void badJoinGameTest() {
+        String authToken = facade.registerUser(new RegisterRequest(existingUsername, existingPassword, existingEmail)).authToken();
+        int gameID = facade.createGame(new CreateGameRequest(authToken, existingGameName)).gameID();
+        Assertions.assertThrows(Exception.class, ()-> facade.joinGame(new JoinGameRequest(authToken, "WHITE", gameID + 10)));
+    }
+
+    @Test
     public void clearTest() {
+        Assertions.assertDoesNotThrow(()-> facade.clear(new ClearRequest()));
+    }
+
+    @Test
+    public void doubleClearTest() {
+        Assertions.assertDoesNotThrow(()-> facade.clear(new ClearRequest()));
         Assertions.assertDoesNotThrow(()-> facade.clear(new ClearRequest()));
     }
 }
