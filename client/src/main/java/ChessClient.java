@@ -11,12 +11,14 @@ import static ui.EscapeSequences.*;
 
 public class ChessClient {
     private final ServerFacade serverFacade;
+
     //user info
     private String username = null;
     private String authToken = null;
     private boolean isLoggedIn = false;
+
     //store gamesList
-    Integer nextClientSideGameID = 1;
+    Integer nextClientGameID = 1;
     private Map<Integer, Integer> gameIdList = new TreeMap<>(); //<client id, database id>
     private Collection<GameData> allGames = null;
 
@@ -77,18 +79,23 @@ public class ChessClient {
     }
 
     public String login(String... params) throws ResponseException {
+        //sanitize input
         if (params.length != 2) {
             throw new ResponseException(400, "Expected: login <USERNAME> <PASSWORD>");
         }
         if (isLoggedIn && this.username.equals(params[0])) {
             throw new ResponseException(400, "You are already logged in");
         }
+
+        //login the user
         try {
             String username = params[0];
             String password = params[1];
+            //set user info
             authToken = serverFacade.loginUser(new LoginRequest(username, password)).authToken();
             isLoggedIn = true;
             this.username = username;
+
             return "Logged in as " + username;
         } catch (ResponseException e) {
             throw new ResponseException(400, "Wrong username or password");
@@ -96,15 +103,21 @@ public class ChessClient {
     }
 
     public String register(String... params) throws ResponseException {
+        //sanitize input
         if (params.length != 3) {
             throw new ResponseException(400, "Expected: register <USERNAME> <PASSWORD> <EMAIL>");
         }
+
+        //register the user
         try {
             String username = params[0];
             String password = params[1];
             String email = params[2];
             authToken = serverFacade.registerUser(new RegisterRequest(username, password, email)).authToken();
+            //set user info
             isLoggedIn = true;
+            this.username = username;
+
             return "Logged in as " + username;
         } catch (ResponseException e) {
             throw new ResponseException(400, "That username is already taken");
@@ -113,51 +126,48 @@ public class ChessClient {
 
     public String logout() throws ResponseException {
         assertLoggedIn();
-        try {
-            serverFacade.logoutUser(new LogoutRequest(authToken));
-            authToken = null;
-            isLoggedIn = false;
-            username = null;
-            return "Logged out";
-        } catch (ResponseException e) {
-            throw e;
-        }
+        serverFacade.logoutUser(new LogoutRequest(authToken));
+
+        //reset user info
+        authToken = null;
+        isLoggedIn = false;
+        username = null;
+
+        return "Logged out";
     }
 
     public String createGame(String... params) throws ResponseException {
+        //sanitize input
         assertLoggedIn();
         if (params.length != 1) {
             throw new ResponseException(400, "Expected: create <NAME>");
         }
-        try {
-            String gameName = params[0];
-            int externalGameID = serverFacade.createGame(new CreateGameRequest(authToken, gameName)).gameID();
-            gameIdList.put(nextClientSideGameID++, externalGameID);
-            allGames = serverFacade.listGames(new ListGamesRequest(authToken)).games();
-            return "Created game with the name " + gameName;
-        } catch (ResponseException e) {
-            throw e;
-        }
+
+        //create the game
+        String gameName = params[0];
+        int dbGameID = serverFacade.createGame(new CreateGameRequest(authToken, gameName)).gameID();
+        gameIdList.put(nextClientGameID++, dbGameID);
+
+        //after adding the game, refresh games list
+        allGames = serverFacade.listGames(new ListGamesRequest(authToken)).games();
+
+        return "Created game with the name " + gameName;
     }
 
     public String listGames() throws ResponseException {
         assertLoggedIn();
-        try {
-            var listGames = serverFacade.listGames(new ListGamesRequest(authToken)).games();
-            var result = new StringBuilder().append("Available games:\n");
-            allGames = listGames;
+        var listGames = serverFacade.listGames(new ListGamesRequest(authToken)).games();
+        allGames = listGames; //refresh list of games
 
-            nextClientSideGameID = 1;
-            for (var dbGame : listGames) {
-                gameIdList.put(nextClientSideGameID, dbGame.gameID());
-                result.append(nextClientSideGameID).append(". ").append(dbGame.gameName()).append('\n');
-                ++nextClientSideGameID;
-            }
-
-            return result.toString();
-        } catch (ResponseException e) {
-            throw e;
+        var result = new StringBuilder().append("Available games:\n");
+        nextClientGameID = 1;
+        for (var dbGame : listGames) {
+            gameIdList.put(nextClientGameID, dbGame.gameID());
+            result.append(nextClientGameID).append(". ").append(dbGame.gameName()).append('\n');
+            ++nextClientGameID;
         }
+
+        return result.toString();
     }
 
     public String joinGame(String... params) throws ResponseException {
@@ -166,9 +176,9 @@ public class ChessClient {
         if (params.length != 2) {
             throw new ResponseException(400, "Expected: join <ID> <WHITE|BLACK>");
         }
-        int id;
+        int selectedId;
         try {
-            id = Integer.parseInt(params[0]);
+            selectedId = Integer.parseInt(params[0]);
         } catch (Exception e) {
             throw new ResponseException(400, "<ID> should be an integer");
         }
@@ -177,19 +187,22 @@ public class ChessClient {
             throw new ResponseException(400, "<WHITE|BLACK> should be either WHITE or BLACK");
         }
         if (allGames == null) {
+            //selectedId uses the result from listGames.
+            // If they haven't called listGames yet, do it for them
             listGames();
         }
 
+        //join the game
         try {
-            serverFacade.joinGame(new JoinGameRequest(authToken, teamColor, selectGameID(id)));
+            serverFacade.joinGame(new JoinGameRequest(authToken, teamColor, selectGameID(selectedId)));
         } catch (Exception e) {
             if (e.getMessage().equals("Invalid game ID")) {
                 throw e;
             }
-            throw new ResponseException(400, teamColor + " is already taken");
+            throw new ResponseException(400, teamColor + " team is already taken");
         }
 
-        return displayGame(selectGameID(id), teamColor);
+        return displayGame(selectGameID(selectedId), teamColor);
     }
 
     public String observeGame(String... params) throws ResponseException {
@@ -198,17 +211,19 @@ public class ChessClient {
         if (params.length != 1) {
             throw new ResponseException(400, "Expected: observe <ID>");
         }
-        int id;
+        int selectedId;
         try {
-            id = Integer.parseInt(params[0]);
+            selectedId = Integer.parseInt(params[0]);
         } catch (Exception e) {
             throw new ResponseException(400, "<ID> should be an integer");
         }
         if (allGames == null) {
+            //selectedId uses the result from listGames.
+            // If they haven't called listGames yet, do it for them
             listGames();
         }
 
-        return displayGame(selectGameID(id), "WHITE");
+        return displayGame(selectGameID(selectedId), "WHITE");
     }
 
     private void assertLoggedIn() throws ResponseException {
@@ -218,6 +233,7 @@ public class ChessClient {
     }
 
     private int selectGameID(int clientID) throws ResponseException {
+        //converts client IDs to database IDs
         try {
             return gameIdList.get(clientID);
         } catch (Exception e){
@@ -239,57 +255,77 @@ public class ChessClient {
         GameData chosenGame = selectGameData(dbID);
 
         //create and set up the board with labels
-        String[][] tempBoard = new String[10][10];
-        //corners
-        tempBoard[0][0] = SET_BG_COLOR_LIGHT_GREY + "   " + RESET_BG_COLOR;
-        tempBoard[0][9] = SET_BG_COLOR_LIGHT_GREY + "   " + RESET_BG_COLOR;
-        tempBoard[9][0] = SET_BG_COLOR_LIGHT_GREY + "   " + RESET_BG_COLOR;
-        tempBoard[9][9] = SET_BG_COLOR_LIGHT_GREY + "   " + RESET_BG_COLOR;
-        //column labels (letters)
-        char col = 'a';
-        for (int i = 1; i <= 8; ++i) {
-            tempBoard[0][i] = SET_BG_COLOR_LIGHT_GREY + " " + String.valueOf(col) + " " + RESET_BG_COLOR;
-            tempBoard[9][i] = SET_BG_COLOR_LIGHT_GREY + " " + String.valueOf(col) + " " + RESET_BG_COLOR;
-            ++col;
-        }
-        //row labels (numbers)
-        for (int i = 1; i <= 8; ++i) {
-            tempBoard[i][0] = SET_BG_COLOR_LIGHT_GREY + " " + String.valueOf(i) + " " + RESET_BG_COLOR;
-            tempBoard[i][9] = SET_BG_COLOR_LIGHT_GREY + " " + String.valueOf(i) + " " + RESET_BG_COLOR;
-        }
+        String[][] tempBoard = setUpGameDisplay();
 
         //put pieces onto the board
-        for (int r = 1; r <= 8; ++r) {
-            for (int c = 1; c <= 8; ++c) {
-                ChessPiece p = chosenGame.game().getBoard().getPiece(new ChessPosition(r, c));
-                tempBoard[9-r][9-c] = squareColor(r, c) + pieceColor(p) + RESET_BG_COLOR + RESET_TEXT_COLOR;
-            }
-        }
+        fillGameDisplay(tempBoard, chosenGame);
 
-        //finally turn tempBoard into a result, reversing it if viewing from black's perspective
+        //turn tempBoard into a String, reversing it if viewing from black's perspective
         StringBuilder result = new StringBuilder();
         result.append(chosenGame.gameName()).append(":\n");
-        int start = (teamColor.equals("WHITE") ? 0 : 9);
-        int direction = (teamColor.equals("WHITE") ? 1 : -1);
-        for (int r = start; withinBounds(r); r += direction) {
-            for (int c = start; withinBounds(c); c += direction) {
-                result.append(tempBoard[r][c]);
-            }
-            result.append("\n");
-        }
+        createDisplayString(result, teamColor, tempBoard);
+
         return result.toString();
     }
 
-    private boolean withinBounds(int i) {
+    private String[][] setUpGameDisplay() {
+        String[][] tempBoard = new String[10][10];
+        var SET_BG = SET_BG_COLOR_LIGHT_GREY;
+
+        //corners
+        tempBoard[0][0] = SET_BG + "   " + RESET_BG_COLOR;
+        tempBoard[0][9] = SET_BG + "   " + RESET_BG_COLOR;
+        tempBoard[9][0] = SET_BG + "   " + RESET_BG_COLOR;
+        tempBoard[9][9] = SET_BG + "   " + RESET_BG_COLOR;
+
+        //column labels (letters)
+        char col = 'a';
+        for (int i = 1; i <= 8; ++i) {
+            tempBoard[0][i] = SET_BG + " " + col + " " + RESET_BG_COLOR;
+            tempBoard[9][i] = SET_BG + " " + col + " " + RESET_BG_COLOR;
+            ++col;
+        }
+
+        //row labels (numbers)
+        for (int i = 1; i <= 8; ++i) {
+            tempBoard[i][0] = SET_BG + " " + i + " " + RESET_BG_COLOR;
+            tempBoard[i][9] = SET_BG + " " + i + " " + RESET_BG_COLOR;
+        }
+
+        return tempBoard;
+    }
+
+    private void fillGameDisplay(String[][] board, GameData chessGame) {
+        for (int r = 1; r <= 8; ++r) {
+            for (int c = 1; c <= 8; ++c) {
+                ChessPiece p = chessGame.game().getBoard().getPiece(new ChessPosition(r, c));
+                board[9-r][9-c] = squareColor(r, c) + printPiece(p) + RESET_BG_COLOR + RESET_TEXT_COLOR;
+            }
+        }
+
+    }
+
+    private void createDisplayString(StringBuilder result, String teamColor, String[][] board) {
+        int start = (teamColor.equals("WHITE") ? 0 : 9);
+        int direction = (teamColor.equals("WHITE") ? 1 : -1);
+
+        for (int r = start; withinDisplayBounds(r); r += direction) {
+            for (int c = start; withinDisplayBounds(c); c += direction) {
+                result.append(board[r][c]);
+            }
+            result.append("\n");
+        }
+    }
+
+    private boolean withinDisplayBounds(int i) {
         return i >= 0 && i <= 9;
     }
 
     private String squareColor(int row, int col) {
         return (row + col) % 2 == 0 ? SET_BG_COLOR_WHITE : SET_BG_COLOR_BLACK;
-        //return (row + col) % 2 == 0 ? SET_BG_COLOR_WHITE + SET_TEXT_COLOR_BLACK : SET_BG_COLOR_BLACK + SET_TEXT_COLOR_WHITE;
     }
 
-    private String pieceColor(ChessPiece p) {
+    private String printPiece(ChessPiece p) {
         if (p == null) {
             return "   ";
         }
