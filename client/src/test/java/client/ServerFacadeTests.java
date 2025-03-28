@@ -45,7 +45,7 @@ public class ServerFacadeTests {
     public void badRegisterTest() {
         //register the same person twice
         RegisterResult result = facade.registerUser(new RegisterRequest(EXISTING_USERNAME, EXISTING_PASSWORD, EXISTING_EMAIL));
-        Assertions.assertThrows(Exception.class, () -> facade.registerUser(new RegisterRequest(EXISTING_USERNAME, EXISTING_PASSWORD, EXISTING_EMAIL)));
+        Assertions.assertThrows(Exception.class,()->facade.registerUser(new RegisterRequest(EXISTING_USERNAME, EXISTING_PASSWORD, EXISTING_EMAIL)));
     }
 
     @Test
