@@ -164,6 +164,10 @@ public class ChessClient {
         for (var dbGame : listGames) {
             gameIdList.put(nextClientGameID, dbGame.gameID());
             result.append(nextClientGameID).append(". ").append(dbGame.gameName()).append('\n');
+            String white = (dbGame.whiteUsername() != null) ? dbGame.whiteUsername() : "Nobody";
+            result.append("    ").append(white).append(" playing as white\n");
+            String black = (dbGame.blackUsername() != null) ? dbGame.blackUsername() : "Nobody";
+            result.append("    ").append(black).append(" playing as black\n");
             ++nextClientGameID;
         }
 
@@ -288,8 +292,8 @@ public class ChessClient {
 
         //row labels (numbers)
         for (int i = 1; i <= 8; ++i) {
-            tempBoard[i][0] = SET_BG + " " + i + " " + RESET_BG_COLOR;
-            tempBoard[i][9] = SET_BG + " " + i + " " + RESET_BG_COLOR;
+            tempBoard[9-i][0] = SET_BG + " " + i + " " + RESET_BG_COLOR;
+            tempBoard[9-i][9] = SET_BG + " " + i + " " + RESET_BG_COLOR;
         }
 
         return tempBoard;
@@ -299,7 +303,7 @@ public class ChessClient {
         for (int r = 1; r <= 8; ++r) {
             for (int c = 1; c <= 8; ++c) {
                 ChessPiece p = chessGame.game().getBoard().getPiece(new ChessPosition(r, c));
-                board[9-r][9-c] = squareColor(r, c) + printPiece(p) + RESET_BG_COLOR + RESET_TEXT_COLOR;
+                board[9-r][c] = squareColor(r, c) + printPiece(p) + RESET_BG_COLOR + RESET_TEXT_COLOR;
             }
         }
 
@@ -322,7 +326,7 @@ public class ChessClient {
     }
 
     private String squareColor(int row, int col) {
-        return (row + col) % 2 == 0 ? SET_BG_COLOR_WHITE : SET_BG_COLOR_BLACK;
+        return (row + col) % 2 == 0 ? SET_BG_COLOR_BLACK : SET_BG_COLOR_WHITE;
     }
 
     private String printPiece(ChessPiece p) {
