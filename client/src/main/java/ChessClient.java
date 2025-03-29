@@ -146,7 +146,7 @@ public class ChessClient {
         //create the game
         String gameName = params[0];
         int dbGameID = serverFacade.createGame(new CreateGameRequest(authToken, gameName)).gameID();
-        gameIdList.put(nextClientGameID++, dbGameID);
+        gameIdList.put(nextClientGameID++, dbGameID); //optional, I think
 
         //after adding the game, refresh games list
         allGames = serverFacade.listGames(new ListGamesRequest(authToken)).games();
@@ -158,6 +158,7 @@ public class ChessClient {
         assertLoggedIn();
         var listGames = serverFacade.listGames(new ListGamesRequest(authToken)).games();
         allGames = listGames; //refresh list of games
+        gameIdList.clear(); //If there are errors with createGame, try deleting this line
 
         var result = new StringBuilder().append("Available games:\n");
         nextClientGameID = 1;
