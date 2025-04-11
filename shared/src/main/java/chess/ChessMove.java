@@ -67,4 +67,9 @@ public class ChessMove {
     public int hashCode() {
         return Objects.hash(initialPos, finalPos, promoteTo);
     }
+
+    public String toString() {
+        String promotion = getPromotionPiece() == null ? "" : getPromotionPiece().toString().toUpperCase();
+        return getStartPosition().toString() + getEndPosition().toString() + promotion;
+    }
 }

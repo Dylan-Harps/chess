@@ -53,7 +53,11 @@ public class WebSocketHandler {
             ChessGame game = database.getGame(gameID).game();
             game.makeMove(command.getMove());
             database.updateGame(gameID, game);
+
             connections.broadcast(gameID, null, new LoadGameMessage(ServerMessage.ServerMessageType.LOAD_GAME));
+            var message = String.format("%s made move %s", command.getUsername(), command.getMove().toString());
+            var notification = new NotificationMessage(ServerMessage.ServerMessageType.NOTIFICATION, message);
+            connections.broadcast(gameID, command.getUsername(), notification);
         } catch (Exception e) {
             throw new ResponseException(500, e.getMessage());
         }
