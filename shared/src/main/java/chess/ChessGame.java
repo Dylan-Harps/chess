@@ -99,6 +99,7 @@ public class ChessGame {
         if (board.getPiece(move.initialPos) == null
                 || validMoves(move.initialPos) == null
                 || getTeamTurn() != board.getPiece(move.initialPos).getTeamColor()
+                || gameOver
                 || !validMoves(move.initialPos).contains(move)) {
             throw new InvalidMoveException();
         }

@@ -40,7 +40,10 @@ public class WebSocketHandler {
         String participant = command.getUsername();
         String teamColor = command.getTeamColor() == null ? "an observer" : command.getTeamColor();
 
+        //connect
         connections.add(gameID, participant, session);
+
+        //notify participants
         connections.send(gameID, participant, new LoadGameMessage(ServerMessage.ServerMessageType.LOAD_GAME));
         var message = String.format("%s joined the game as %s", participant, teamColor);
         var notification = new NotificationMessage(ServerMessage.ServerMessageType.NOTIFICATION, message);
@@ -50,10 +53,12 @@ public class WebSocketHandler {
     private void makeMove(MakeMoveCommand command) throws ResponseException {
         int gameID = command.getGameID();
         try {
+            //make the move
             ChessGame game = database.getGame(gameID).game();
             game.makeMove(command.getMove());
             database.updateGame(gameID, game);
 
+            //notify participants
             connections.broadcast(gameID, null, new LoadGameMessage(ServerMessage.ServerMessageType.LOAD_GAME));
             var message = String.format("%s made move %s", command.getUsername(), command.getMove().toString());
             var notification = new NotificationMessage(ServerMessage.ServerMessageType.NOTIFICATION, message);
@@ -67,26 +72,29 @@ public class WebSocketHandler {
         int gameID = command.getGameID();
         String participant = command.getUsername();
 
+        //end connection
         connections.remove(gameID, participant);
+
+        //notify participants
         var message = String.format("%s left the game", participant);
         var notification = new NotificationMessage(ServerMessage.ServerMessageType.NOTIFICATION, message);
         connections.broadcast(gameID, participant, notification);
     }
 
-    private void resign(ResignCommand command) throws IOException {
-        //TODO
-    }
-
-    //pet shop examples
-    /*
-    public void makeNoise(String petName, String sound) throws ResponseException {
+    private void resign(ResignCommand command) throws ResponseException {
+        int gameID = command.getGameID();
         try {
-            var message = String.format("%s says %s", petName, sound);
-            var notification = new ServerMessage(ServerMessage.Type.NOISE, message);
-            connections.broadcast("", notification);
-        } catch (Exception ex) {
-            throw new ResponseException(500, ex.getMessage());
+            //mark game as ended
+            ChessGame game = database.getGame(gameID).game();
+            game.setGameOver();
+            database.updateGame(gameID, game);
+
+            //notify participants
+            var message = String.format("%s resigned", command.getUsername());
+            var notification = new NotificationMessage(ServerMessage.ServerMessageType.NOTIFICATION, message);
+            connections.broadcast(gameID, null, notification);
+        } catch (Exception e) {
+            throw new ResponseException(500, e.getMessage());
         }
     }
-    */
 }
