@@ -1,5 +1,6 @@
 package server.websocket;
 
+import chess.ChessGame;
 import com.google.gson.Gson;
 import dataaccess.SQLDataAccess;
 import endpoints.ResponseException;
@@ -46,8 +47,16 @@ public class WebSocketHandler {
         connections.broadcast(gameID, participant, notification);
     }
 
-    private void makeMove(MakeMoveCommand command) throws IOException {
-        //TODO
+    private void makeMove(MakeMoveCommand command) throws ResponseException {
+        int gameID = command.getGameID();
+        try {
+            ChessGame game = database.getGame(gameID).game();
+            game.makeMove(command.getMove());
+            database.updateGame(gameID, game);
+            connections.broadcast(gameID, null, new LoadGameMessage(ServerMessage.ServerMessageType.LOAD_GAME));
+        } catch (Exception e) {
+            throw new ResponseException(500, e.getMessage());
+        }
     }
 
     private void leave(LeaveCommand command) throws IOException {
