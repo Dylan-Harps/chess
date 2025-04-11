@@ -1,7 +1,7 @@
 package websocket.commands;
 
 public class LeaveCommand extends UserGameCommand {
-    public LeaveCommand(CommandType commandType, String username, String authToken, Integer gameID) {
-        super(commandType, username, authToken, gameID);
+    public LeaveCommand(String username, String authToken, Integer gameID) {
+        super(CommandType.LEAVE, username, authToken, gameID);
     }
 }

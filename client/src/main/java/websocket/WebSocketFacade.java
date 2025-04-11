@@ -46,7 +46,7 @@ public class WebSocketFacade extends Endpoint {
 
     public void connectToGame(String username, String authToken, int gameID, String teamColor) throws ResponseException {
         try {
-            var command = new ConnectCommand(UserGameCommand.CommandType.CONNECT, username, authToken, gameID, teamColor);
+            var command = new ConnectCommand(username, authToken, gameID, teamColor);
             this.session.getBasicRemote().sendText(new Gson().toJson(command));
         } catch (IOException ex) {
             throw new ResponseException(500, ex.getMessage());
@@ -55,7 +55,7 @@ public class WebSocketFacade extends Endpoint {
 
     public void makeMove(String username, String authToken, int gameID, ChessMove move) throws ResponseException {
         try {
-            var command = new MakeMoveCommand(UserGameCommand.CommandType.MAKE_MOVE, username, authToken, gameID, move);
+            var command = new MakeMoveCommand(username, authToken, gameID, move);
             this.session.getBasicRemote().sendText(new Gson().toJson(command));
         } catch (IOException ex) {
             throw new ResponseException(500, ex.getMessage());
@@ -64,7 +64,7 @@ public class WebSocketFacade extends Endpoint {
 
     public void leaveGame(String username, String authToken, int gameID) throws ResponseException {
         try {
-            var command = new LeaveCommand(UserGameCommand.CommandType.CONNECT, username, authToken, gameID);
+            var command = new LeaveCommand(username, authToken, gameID);
             this.session.getBasicRemote().sendText(new Gson().toJson(command));
             this.session.close();
         } catch (IOException ex) {
@@ -73,6 +73,11 @@ public class WebSocketFacade extends Endpoint {
     }
 
     public void resign(String username, String authToken, int gameID) throws ResponseException {
-        //TODO
+        try {
+            var command = new ResignCommand(username, authToken, gameID);
+            this.session.getBasicRemote().sendText(new Gson().toJson(command));
+        } catch (IOException ex) {
+            throw new ResponseException(500, ex.getMessage());
+        }
     }
 }

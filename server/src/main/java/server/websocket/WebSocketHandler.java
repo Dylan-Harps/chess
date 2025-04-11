@@ -35,7 +35,7 @@ public class WebSocketHandler {
         }
     }
 
-    private void connect(Session session, ConnectCommand command) throws IOException {
+    private void connect(Session session, ConnectCommand command) throws ResponseException {
         int gameID = command.getGameID();
         String participant = command.getUsername();
         String teamColor = command.getTeamColor() == null ? "an observer" : command.getTeamColor();
@@ -44,10 +44,15 @@ public class WebSocketHandler {
         connections.add(gameID, participant, session);
 
         //notify participants
-        connections.send(gameID, participant, new LoadGameMessage(ServerMessage.ServerMessageType.LOAD_GAME));
-        var message = String.format("%s joined the game as %s", participant, teamColor);
-        var notification = new NotificationMessage(ServerMessage.ServerMessageType.NOTIFICATION, message);
-        connections.broadcast(gameID, participant, notification);
+        try {
+            ChessGame game = database.getGame(gameID).game();
+            connections.send(gameID, participant, new LoadGameMessage(ServerMessage.ServerMessageType.LOAD_GAME, game));
+            var message = String.format("%s joined the game as %s", participant, teamColor);
+            var notification = new NotificationMessage(ServerMessage.ServerMessageType.NOTIFICATION, message);
+            connections.broadcast(gameID, participant, notification);
+        } catch (Exception e) {
+            throw new ResponseException(500, e.getMessage());
+        }
     }
 
     private void makeMove(MakeMoveCommand command) throws ResponseException {
@@ -59,7 +64,7 @@ public class WebSocketHandler {
             database.updateGame(gameID, game);
 
             //notify participants
-            connections.broadcast(gameID, null, new LoadGameMessage(ServerMessage.ServerMessageType.LOAD_GAME));
+            connections.broadcast(gameID, null, new LoadGameMessage(ServerMessage.ServerMessageType.LOAD_GAME, game));
             var message = String.format("%s made move %s", command.getUsername(), command.getMove().toString());
             var notification = new NotificationMessage(ServerMessage.ServerMessageType.NOTIFICATION, message);
             connections.broadcast(gameID, command.getUsername(), notification);
