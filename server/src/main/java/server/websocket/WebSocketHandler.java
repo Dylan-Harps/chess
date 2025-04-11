@@ -5,7 +5,7 @@ import endpoints.ResponseException;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
-import websocket.commands.UserGameCommand;
+import websocket.commands.*;
 import websocket.messages.ServerMessage;
 
 import java.io.IOException;
@@ -19,26 +19,33 @@ public class WebSocketHandler {
     public void onMessage(Session session, String message) throws IOException {
         UserGameCommand userGameCommand = new Gson().fromJson(message, UserGameCommand.class);
         switch (userGameCommand.getCommandType()) {
-            case CONNECT -> connect();
-            case MAKE_MOVE -> makeMove();
-            case LEAVE -> leave();
-            case RESIGN -> resign();
+            case CONNECT -> connect(session, new Gson().fromJson(message, ConnectCommand.class));
+            case MAKE_MOVE -> makeMove(session, new Gson().fromJson(message, MakeMoveCommand.class));
+            case LEAVE -> leave(session, new Gson().fromJson(message, LeaveCommand.class));
+            case RESIGN -> resign(session, new Gson().fromJson(message, ResignCommand.class));
         }
     }
 
-    private void connect() {
+    private void connect(Session session, ConnectCommand command) throws IOException {
+        int gameID = command.getGameID();
+        String participant = command.getUsername();
+        String teamColor = command.getTeamColor() == null ? "an observer" : command.getTeamColor();
+
+        connections.add(gameID, participant, session);
+        var message = String.format("%s joined the game as %s", participant, teamColor);
+        var notification = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME, message);
+        connections.broadcast(gameID, participant, notification);
+    }
+
+    private void makeMove(Session session, MakeMoveCommand command) throws IOException {
         //TODO
     }
 
-    private void makeMove() {
+    private void leave(Session session, LeaveCommand command) throws IOException {
         //TODO
     }
 
-    private void leave() {
-        //TODO
-    }
-
-    private void resign() {
+    private void resign(Session session, ResignCommand command) throws IOException {
         //TODO
     }
 

@@ -1,8 +1,7 @@
 package websocket.commands;
 
 public class MakeMoveCommand extends UserGameCommand {
-    public MakeMoveCommand(CommandType commandType, String authToken, Integer gameID) {
-        super(commandType, authToken, gameID);
+    public MakeMoveCommand(CommandType commandType, String username, String authToken, Integer gameID) {
+        super(commandType, username, authToken, gameID);
     }
-    //TODO
 }

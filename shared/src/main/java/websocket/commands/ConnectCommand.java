@@ -1,8 +1,14 @@
 package websocket.commands;
 
 public class ConnectCommand extends UserGameCommand {
-    public ConnectCommand(CommandType commandType, String authToken, Integer gameID) {
-        super(commandType, authToken, gameID);
+    String teamColor;
+
+    public ConnectCommand(CommandType commandType, String username, String authToken, Integer gameID, String teamColor) {
+        super(commandType, username, authToken, gameID);
+        this.teamColor = teamColor;
     }
-    //TODO
+
+    public String getTeamColor() {
+        return teamColor;
+    }
 }
