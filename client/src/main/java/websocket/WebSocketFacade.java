@@ -2,7 +2,7 @@ package websocket;
 
 import com.google.gson.Gson;
 import endpoints.ResponseException;
-import websocket.commands.UserGameCommand;
+import websocket.commands.*;
 import websocket.messages.ServerMessage;
 
 import javax.websocket.*;
@@ -43,13 +43,25 @@ public class WebSocketFacade extends Endpoint {
     public void onOpen(Session session, EndpointConfig endpointConfig) {
     }
 
-    public void connectClient(String authToken, int gameID) throws ResponseException {
+    public void connectToGame(String authToken, int gameID) throws ResponseException {
         try {
-            var command = new UserGameCommand(UserGameCommand.CommandType.CONNECT, authToken, gameID);
+            var command = new ConnectCommand(UserGameCommand.CommandType.CONNECT, authToken, gameID);
             this.session.getBasicRemote().sendText(new Gson().toJson(command));
         } catch (IOException ex) {
             throw new ResponseException(500, ex.getMessage());
         }
+    }
+
+    public void makeMove(String authToken, int gameID) throws ResponseException {
+        //TODO
+    }
+
+    public void leaveGame(String authToken, int gameID) throws ResponseException {
+        //TODO
+    }
+
+    public void resign(String authToken, int gameID) throws ResponseException {
+        //TODO
     }
 
     //examples from PetShop

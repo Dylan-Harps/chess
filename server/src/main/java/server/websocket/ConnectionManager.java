@@ -5,26 +5,40 @@ import websocket.messages.ServerMessage;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ConnectionManager {
-    //TODO change this to fit the needs of chess, not petShop
-    public final ConcurrentHashMap<String, Connection> connections = new ConcurrentHashMap<>();
+    //Map of gameIDs to a set of connections associated with each participant
+    public final ConcurrentHashMap<Integer, HashSet<Connection>> connections = new ConcurrentHashMap<>();
 
-    public void add(String visitorName, Session session) {
-        var connection = new Connection(visitorName, session);
-        connections.put(visitorName, connection);
+    public void add(int gameID, String participant, Session session) {
+        var connection = new Connection(participant, session);
+        //if the game is already connected, add the participant to the game
+        if (connections.containsKey(gameID)) {
+            connections.get(gameID).add(connection);
+        }
+        //otherwise, make a new connection to the game
+        else {
+            connections.put(gameID, new HashSet<>());
+            connections.get(gameID).add(connection);
+        }
     }
 
-    public void remove(String visitorName) {
-        connections.remove(visitorName);
+    public void remove(int gameID, String participant) {
+        var gameConnections = connections.get(gameID);
+        gameConnections.removeIf(c -> c.participant.equals(participant));
+        if (gameConnections.isEmpty()) {
+            connections.remove(gameID);
+        }
     }
 
-    public void broadcast(String excludeVisitorName, ServerMessage notification) throws IOException {
+    public void broadcast(int gameID, String excludeParticipant, ServerMessage notification) throws IOException {
         var removeList = new ArrayList<Connection>();
-        for (var c : connections.values()) {
+        var gameConnections = connections.get(gameID);
+        for (var c : gameConnections) {
             if (c.session.isOpen()) {
-                if (!c.visitorName.equals(excludeVisitorName)) {
+                if (!c.participant.equals(excludeParticipant)) {
                     c.send(notification.toString());
                 }
             } else {
@@ -34,7 +48,7 @@ public class ConnectionManager {
 
         // Clean up any connections that were left open.
         for (var c : removeList) {
-            connections.remove(c.visitorName);
+            remove(gameID, c.participant);
         }
     }
 }

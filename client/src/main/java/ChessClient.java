@@ -4,6 +4,8 @@ import chess.ChessPosition;
 import endpoints.*;
 import model.GameData;
 import ui.ServerFacade;
+import websocket.MessageHandler;
+import websocket.WebSocketFacade;
 
 import java.util.*;
 
@@ -11,6 +13,7 @@ import static ui.EscapeSequences.*;
 
 public class ChessClient {
     private final ServerFacade serverFacade;
+    private final WebSocketFacade webSocketFacade;
 
     //user info
     private String username = null;
@@ -22,8 +25,9 @@ public class ChessClient {
     private Map<Integer, Integer> gameIdList = new TreeMap<>(); //<client id, database id>
     private Collection<GameData> allGames = null;
 
-    public ChessClient(String port) {
+    public ChessClient(String port, MessageHandler messageHandler) {
         serverFacade = new ServerFacade("http://localhost:" + port);
+        webSocketFacade = new WebSocketFacade("http://localhost:" + port, messageHandler);
     }
 
     public String eval(String input) {
