@@ -52,37 +52,21 @@ public class WebSocketFacade extends Endpoint {
         }
     }
 
-    public void makeMove(String authToken, int gameID) throws ResponseException {
+    public void makeMove(String username, String authToken, int gameID) throws ResponseException {
         //TODO
     }
 
-    public void leaveGame(String authToken, int gameID) throws ResponseException {
-        //TODO
-    }
-
-    public void resign(String authToken, int gameID) throws ResponseException {
-        //TODO
-    }
-
-    //examples from PetShop
-    /*
-    public void enterPetShop(String visitorName) throws ResponseException {
+    public void leaveGame(String username, String authToken, int gameID) throws ResponseException {
         try {
-            var action = new UserGameCommand(UserGameCommand.Type.ENTER, visitorName);
-            this.session.getBasicRemote().sendText(new Gson().toJson(action));
-        } catch (IOException ex) {
-            throw new ResponseException(500, ex.getMessage());
-        }
-    }
-
-    public void leavePetShop(String visitorName) throws ResponseException {
-        try {
-            var action = new UserGameCommand(UserGameCommand.Type.EXIT, visitorName);
-            this.session.getBasicRemote().sendText(new Gson().toJson(action));
+            var command = new LeaveCommand(UserGameCommand.CommandType.CONNECT, username, authToken, gameID);
+            this.session.getBasicRemote().sendText(new Gson().toJson(command));
             this.session.close();
         } catch (IOException ex) {
             throw new ResponseException(500, ex.getMessage());
         }
     }
-    */
+
+    public void resign(String username, String authToken, int gameID) throws ResponseException {
+        //TODO
+    }
 }

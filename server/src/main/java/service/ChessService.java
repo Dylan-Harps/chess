@@ -8,14 +8,17 @@ import model.GameData;
 import model.UserData;
 import org.mindrot.jbcrypt.BCrypt;
 import endpoints.*;
+import server.websocket.WebSocketHandler;
 
 import java.util.UUID;
 
 public class ChessService {
     SQLDataAccess database;
+    WebSocketHandler webSocketHandler;
 
     public ChessService() {
         this.database = new SQLDataAccess();
+        webSocketHandler = new WebSocketHandler(this.database);
     }
 
     public ChessService(SQLDataAccess database) {

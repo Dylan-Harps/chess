@@ -3,6 +3,7 @@ package server;
 import com.google.gson.Gson;
 import handler.ChessHandler;
 import endpoints.ResponseException;
+import server.websocket.WebSocketHandler;
 import spark.*;
 import endpoints.*;
 

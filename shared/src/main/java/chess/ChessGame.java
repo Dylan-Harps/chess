@@ -12,6 +12,7 @@ import java.util.Collection;
 public class ChessGame {
     TeamColor activeTeam = TeamColor.WHITE;
     ChessBoard board = new ChessBoard();
+    boolean gameOver = false;
 
     public ChessGame() {
         board.resetBoard();
@@ -25,7 +26,7 @@ public class ChessGame {
     }
 
     /**
-     * Set's which teams turn it is
+     * Sets which team's turn it is
      *
      * @param team the team whose turn it is
      */
@@ -184,5 +185,13 @@ public class ChessGame {
      */
     public ChessBoard getBoard() {
         return board;
+    }
+
+    public void setGameOver() {
+        gameOver = true;
+    }
+
+    public boolean getGameOver() {
+        return gameOver;
     }
 }

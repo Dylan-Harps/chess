@@ -1,10 +1,12 @@
 package server.websocket;
 
 import com.google.gson.Gson;
+import dataaccess.SQLDataAccess;
 import endpoints.ResponseException;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
+import service.ChessService;
 import websocket.commands.*;
 import websocket.messages.LoadGameMessage;
 import websocket.messages.NotificationMessage;
@@ -14,17 +16,21 @@ import java.io.IOException;
 
 @WebSocket
 public class WebSocketHandler {
-
     private final ConnectionManager connections = new ConnectionManager();
+    private SQLDataAccess database;
+
+    public WebSocketHandler(SQLDataAccess database) {
+        this.database = database;
+    }
 
     @OnWebSocketMessage
     public void onMessage(Session session, String message) throws IOException {
         UserGameCommand userGameCommand = new Gson().fromJson(message, UserGameCommand.class);
         switch (userGameCommand.getCommandType()) {
             case CONNECT -> connect(session, new Gson().fromJson(message, ConnectCommand.class));
-            case MAKE_MOVE -> makeMove(session, new Gson().fromJson(message, MakeMoveCommand.class));
-            case LEAVE -> leave(session, new Gson().fromJson(message, LeaveCommand.class));
-            case RESIGN -> resign(session, new Gson().fromJson(message, ResignCommand.class));
+            case MAKE_MOVE -> makeMove(new Gson().fromJson(message, MakeMoveCommand.class));
+            case LEAVE -> leave(new Gson().fromJson(message, LeaveCommand.class));
+            case RESIGN -> resign(new Gson().fromJson(message, ResignCommand.class));
         }
     }
 
@@ -40,11 +46,11 @@ public class WebSocketHandler {
         connections.broadcast(gameID, participant, notification);
     }
 
-    private void makeMove(Session session, MakeMoveCommand command) throws IOException {
+    private void makeMove(MakeMoveCommand command) throws IOException {
         //TODO
     }
 
-    private void leave(Session session, LeaveCommand command) throws IOException {
+    private void leave(LeaveCommand command) throws IOException {
         int gameID = command.getGameID();
         String participant = command.getUsername();
 
@@ -54,19 +60,12 @@ public class WebSocketHandler {
         connections.broadcast(gameID, participant, notification);
     }
 
-    private void resign(Session session, ResignCommand command) throws IOException {
+    private void resign(ResignCommand command) throws IOException {
         //TODO
     }
 
     //pet shop examples
     /*
-    private void exit(String visitorName) throws IOException {
-        connections.remove(visitorName);
-        var message = String.format("%s left the shop", visitorName);
-        var notification = new ServerMessage(ServerMessage.Type.DEPARTURE, message);
-        connections.broadcast(visitorName, notification);
-    }
-
     public void makeNoise(String petName, String sound) throws ResponseException {
         try {
             var message = String.format("%s says %s", petName, sound);

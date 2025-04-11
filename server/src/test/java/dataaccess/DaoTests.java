@@ -1,12 +1,16 @@
 package dataaccess;
 
 import chess.ChessGame;
+import chess.ChessMove;
+import chess.ChessPosition;
+import chess.InvalidMoveException;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import endpoints.CreateGameRequest;
 import endpoints.LogoutRequest;
 import endpoints.RegisterRequest;
 import model.AuthData;
+import model.GameData;
 import model.UserData;
 import org.junit.jupiter.api.*;
 import service.*;
@@ -34,7 +38,6 @@ public class DaoTests {
     }
 
     @Test
-    @Order(1)
     @DisplayName("Serialize ChessGame")
     public void serializeChessGame() {
         ChessGame game = new ChessGame();
@@ -43,7 +46,6 @@ public class DaoTests {
     }
 
     @Test
-    @Order(2)
     @DisplayName("Deserialize ChessGame")
     public void deserializeChessGame() {
         var builder = new GsonBuilder();
@@ -52,7 +54,6 @@ public class DaoTests {
     }
 
     @Test
-    @Order(3)
     @DisplayName("Create Database")
     public void createDataBase() {
         Assertions.assertDoesNotThrow(SQLDataAccess::new);
@@ -60,14 +61,12 @@ public class DaoTests {
 
     //get auth
     @Test
-    @Order(4)
     @DisplayName("getAuth")
     public void getAuth() {
         Assertions.assertDoesNotThrow(() -> database.getAuth(existingAuthToken));
     }
 
     @Test
-    @Order(5)
     @DisplayName("getAuth After Logout")
     public void wrongPassword() {
         Assertions.assertDoesNotThrow(() -> database.deleteAuth(existingAuthToken));
@@ -76,7 +75,6 @@ public class DaoTests {
 
     //create auth
     @Test
-    @Order(6)
     @DisplayName("createAuth")
     public void createAuth() {
         AuthData authData = new AuthData("testingAuthToken", "testingUsername");
@@ -84,7 +82,6 @@ public class DaoTests {
     }
 
     @Test
-    @Order(7)
     @DisplayName("Duplicate createAuth")
     public void badCreateAuth() {
         AuthData authData = new AuthData("testingAuthToken", "testingUsername");
@@ -94,14 +91,12 @@ public class DaoTests {
 
     //delete auth
     @Test
-    @Order(8)
     @DisplayName("deleteAuth")
     public void deleteAuth() {
         Assertions.assertDoesNotThrow(() -> database.deleteAuth(existingAuthToken));
     }
 
     @Test
-    @Order(9)
     @DisplayName("deleteAuth after clear")
     public void badDeleteAuth() {
         database.clear();
@@ -110,14 +105,12 @@ public class DaoTests {
 
     //get game
     @Test
-    @Order(10)
     @DisplayName("getGame")
     public void getGame() {
         Assertions.assertDoesNotThrow(() -> database.getGame(existingGameID));
     }
 
     @Test
-    @Order(11)
     @DisplayName("Get Nonexistent Game")
     public void badGetGame() {
         Assertions.assertThrows(Exception.class, () -> database.getGame(2));
@@ -125,7 +118,6 @@ public class DaoTests {
 
     //list games
     @Test
-    @Order(12)
     @DisplayName("listGames")
     public void listGames() {
         Assertions.assertDoesNotThrow(() -> database.listGames());
@@ -133,7 +125,6 @@ public class DaoTests {
     }
 
     @Test
-    @Order(13)
     @DisplayName("List Games Even When Empty")
     public void badListGames() {
         database.clear();
@@ -143,14 +134,12 @@ public class DaoTests {
 
     //create game
     @Test
-    @Order(14)
     @DisplayName("Create Game")
     public void createGame() {
         Assertions.assertDoesNotThrow(() -> existingService.createGame(new CreateGameRequest(existingAuthToken, "newgame")));
     }
 
     @Test
-    @Order(15)
     @DisplayName("Create Game While Logged Out")
     public void badCreateGame() {
         existingService.logout(new LogoutRequest(existingAuthToken));
@@ -159,29 +148,44 @@ public class DaoTests {
 
     //delete game
     @Test
-    @Order(16)
     @DisplayName("Delete Game")
     public void deleteGame() {
         Assertions.assertDoesNotThrow(() -> database.deleteGame(existingGameID));
     }
 
     @Test
-    @Order(17)
     @DisplayName("Delete Nonexistent Game")
     public void badDeleteGame() {
         Assertions.assertThrows(Exception.class, () -> database.deleteGame(2));
     }
 
+    //update game
+    @Test
+    @DisplayName("Update Game")
+    public void updateGame() {
+        ChessGame updatedGame = new ChessGame();
+        ChessMove move = new ChessMove(new ChessPosition(2, 1), new ChessPosition(3, 1), null);
+        Assertions.assertDoesNotThrow(() -> updatedGame.makeMove(move));
+        Assertions.assertDoesNotThrow(() -> database.updateGame(existingGameID, updatedGame));
+    }
+
+    @Test
+    @DisplayName("Update Nonexistent Game")
+    public void badUpdateGame() {
+        ChessGame updatedGame = new ChessGame();
+        ChessMove move = new ChessMove(new ChessPosition(2, 1), new ChessPosition(3, 1), null);
+        Assertions.assertDoesNotThrow(() -> updatedGame.makeMove(move));
+        Assertions.assertThrows(Exception.class, () -> database.updateGame(existingGameID + 1, updatedGame));
+    }
+
     //get user
     @Test
-    @Order(18)
     @DisplayName("Get User")
     public void getUser() {
         Assertions.assertDoesNotThrow(() -> database.getUser(existingUsername));
     }
 
     @Test
-    @Order(19)
     @DisplayName("Get Nonexistent User")
     public void badGetUser() {
         Assertions.assertThrows(Exception.class, () -> database.getUser("wrongUsername"));
@@ -189,7 +193,6 @@ public class DaoTests {
 
     //create user
     @Test
-    @Order(20)
     @DisplayName("Create User")
     public void createUser() {
         UserData userData = new UserData("newUsername", "newPassword", "newEmail");
@@ -197,7 +200,6 @@ public class DaoTests {
     }
 
     @Test
-    @Order(21)
     @DisplayName("Create User Without Username")
     public void badCreateUser() {
         UserData userData = new UserData(null, "newPassword", "newEmail");
@@ -206,7 +208,6 @@ public class DaoTests {
 
     //clear
     @Test
-    @Order(22)
     @DisplayName("Clear Database")
     public void clear() {
         Assertions.assertDoesNotThrow(() -> database.clear());
