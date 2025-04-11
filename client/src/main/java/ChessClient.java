@@ -6,14 +6,16 @@ import model.GameData;
 import ui.ServerFacade;
 import websocket.MessageHandler;
 import websocket.WebSocketFacade;
+import websocket.messages.ServerMessage;
 
 import java.util.*;
 
 import static ui.EscapeSequences.*;
 
-public class ChessClient {
+public class ChessClient implements MessageHandler {
     private final ServerFacade serverFacade;
     private final WebSocketFacade webSocketFacade;
+    private ChessPlayer chessPlayer = null;
 
     //user info
     private String username = null;
@@ -25,9 +27,9 @@ public class ChessClient {
     private Map<Integer, Integer> gameIdList = new TreeMap<>(); //<client id, database id>
     private Collection<GameData> allGames = null;
 
-    public ChessClient(String port, MessageHandler messageHandler) {
+    public ChessClient(String port) {
         serverFacade = new ServerFacade("http://localhost:" + port);
-        webSocketFacade = new WebSocketFacade("http://localhost:" + port, messageHandler);
+        webSocketFacade = new WebSocketFacade("http://localhost:" + port, this);
     }
 
     public String eval(String input) {
@@ -204,6 +206,8 @@ public class ChessClient {
         //join the game
         try {
             serverFacade.joinGame(new JoinGameRequest(authToken, teamColor, selectGameID(selectedId)));
+            GameData gameData = selectGameData(selectGameID(selectedId));
+            chessPlayer = new ChessPlayer(serverFacade, webSocketFacade, gameData, teamColor);
             webSocketFacade.connectToGame(username, authToken, selectGameID(selectedId), teamColor);
         } catch (Exception e) {
             if (e.getMessage().equals("Invalid game ID")) {
@@ -212,7 +216,7 @@ public class ChessClient {
             throw new ResponseException(400, teamColor + " team is already taken");
         }
 
-        return displayGame(selectGameID(selectedId), teamColor);
+        return displayGame(selectGameID(selectedId), teamColor); //TODO delete?
     }
 
     public String observeGame(String... params) throws ResponseException {
@@ -233,7 +237,10 @@ public class ChessClient {
             listGames();
         }
 
+        //join game as observer
         try {
+            GameData gameData = selectGameData(selectGameID(selectedId));
+            chessPlayer = new ChessPlayer(serverFacade, webSocketFacade, gameData, "observer");
             webSocketFacade.connectToGame(username, authToken, selectGameID(selectedId), null);
         } catch (Exception e) {
             if (e.getMessage().equals("Invalid game ID")) {
@@ -241,7 +248,7 @@ public class ChessClient {
             }
             throw new ResponseException(500, e.getMessage());
         }
-        return displayGame(selectGameID(selectedId), "WHITE");
+        return displayGame(selectGameID(selectedId), "WHITE"); //TODO delete?
     }
 
     private void assertLoggedIn() throws ResponseException {
@@ -349,5 +356,11 @@ public class ChessClient {
         }
         String color = (p.getTeamColor() == ChessGame.TeamColor.WHITE ? SET_TEXT_COLOR_RED : SET_TEXT_COLOR_BLUE);
         return " " + color + p.toString().toUpperCase() + " ";
+    }
+
+    @Override
+    public void notify(ServerMessage message) {
+        //TODO
+        // just return whatever the ChessPlayer does
     }
 }

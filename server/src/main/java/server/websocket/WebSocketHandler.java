@@ -10,6 +10,7 @@ import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import websocket.commands.*;
+import websocket.messages.ErrorMessage;
 import websocket.messages.LoadGameMessage;
 import websocket.messages.NotificationMessage;
 import websocket.messages.ServerMessage;
@@ -26,7 +27,7 @@ public class WebSocketHandler {
     }
 
     @OnWebSocketMessage
-    public void onMessage(Session session, String message) throws IOException {
+    public void onMessage(Session session, String message) throws ResponseException, IOException {
         UserGameCommand userGameCommand = new Gson().fromJson(message, UserGameCommand.class);
         switch (userGameCommand.getCommandType()) {
             case CONNECT -> connect(session, new Gson().fromJson(message, ConnectCommand.class));
@@ -36,10 +37,9 @@ public class WebSocketHandler {
         }
     }
 
-    private void connect(Session session, ConnectCommand command) throws ResponseException {
+    private void connect(Session session, ConnectCommand command) throws ResponseException, IOException {
         int gameID = command.getGameID();
         String participant = command.getUsername();
-        String teamColor = command.getTeamColor() == null ? "an observer" : command.getTeamColor();
 
         try {
             verifyUser(command, null);
@@ -47,14 +47,17 @@ public class WebSocketHandler {
             //connect
             connections.add(gameID, participant, session);
 
-            //notify participants
+            //notify loadGame
             ChessGame game = database.getGame(gameID).game();
-            connections.send(gameID, participant, new LoadGameMessage(ServerMessage.ServerMessageType.LOAD_GAME, game));
+            connections.send(gameID, participant, new LoadGameMessage(game));
+
+            //notify others of joining the game
+            String teamColor = command.getTeamColor() == null ? "an observer" : command.getTeamColor();
             var message = String.format("%s joined the game as %s", participant, teamColor);
-            var notification = new NotificationMessage(ServerMessage.ServerMessageType.NOTIFICATION, message);
+            var notification = new NotificationMessage(message);
             connections.broadcast(gameID, participant, notification);
         } catch (ResponseException e) {
-            throw e;
+            connections.send(gameID, command.getUsername(), new ErrorMessage(e.getMessage()));
         } catch (Exception e) {
             throw new ResponseException(500, e.getMessage());
         }
@@ -73,11 +76,30 @@ public class WebSocketHandler {
             game.makeMove(command.getMove());
             database.updateGame(gameID, game);
 
-            //notify participants
-            connections.broadcast(gameID, null, new LoadGameMessage(ServerMessage.ServerMessageType.LOAD_GAME, game));
+            //notify participants:
+            // load game
+            connections.broadcast(gameID, null, new LoadGameMessage(game));
+
+            // notify of move
             var message = String.format("%s made move %s", command.getUsername(), command.getMove().toString());
-            var notification = new NotificationMessage(ServerMessage.ServerMessageType.NOTIFICATION, message);
+            var notification = new NotificationMessage(message);
             connections.broadcast(gameID, command.getUsername(), notification);
+
+            // notify of check, checkmate, or stalemate
+            ChessGame.TeamColor opponent = team.equals("WHITE") ? ChessGame.TeamColor.BLACK : ChessGame.TeamColor.WHITE;
+            NotificationMessage checkNotification = null;
+            if (game.isInCheck(opponent)) {
+                checkNotification = new NotificationMessage("Check!");
+            }
+            if (game.isInCheckmate(opponent)) {
+                checkNotification = new NotificationMessage("Checkmate!");
+            }
+            if (game.isInStalemate(opponent)) {
+                checkNotification = new NotificationMessage("Stalemate!");
+            }
+            if (checkNotification != null) {
+                connections.broadcast(gameID, null, notification);
+            }
         } catch (Exception e) {
             throw new ResponseException(500, e.getMessage());
         }
@@ -102,7 +124,7 @@ public class WebSocketHandler {
 
             //notify participants
             var message = String.format("%s left the game", participant);
-            var notification = new NotificationMessage(ServerMessage.ServerMessageType.NOTIFICATION, message);
+            var notification = new NotificationMessage(message);
             connections.broadcast(gameID, participant, notification);
         } catch (Exception e) {
             throw new ResponseException(500, e.getMessage());
@@ -122,7 +144,7 @@ public class WebSocketHandler {
 
             //notify participants
             var message = String.format("%s resigned", command.getUsername());
-            var notification = new NotificationMessage(ServerMessage.ServerMessageType.NOTIFICATION, message);
+            var notification = new NotificationMessage(message);
             connections.broadcast(gameID, null, notification);
         } catch (Exception e) {
             throw new ResponseException(500, e.getMessage());
@@ -131,7 +153,9 @@ public class WebSocketHandler {
 
     private void verifyUser(UserGameCommand command, String assertTeam) throws ResponseException {
         try {
-            AuthData authData = database.getAuth(command.getAuthToken()); //verify authToken
+            //verify authToken
+            AuthData authData = database.getAuth(command.getAuthToken());
+
             //verify that the authToken and username match
             if (!authData.username().equals(command.getUsername())) {
                 throw new ResponseException(401, "Error: unauthorized");

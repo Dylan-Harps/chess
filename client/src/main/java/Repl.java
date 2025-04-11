@@ -4,11 +4,11 @@ import websocket.messages.ServerMessage;
 import java.util.Scanner;
 import static ui.EscapeSequences.*;
 
-public class Repl implements MessageHandler {
+public class Repl{
     private final ChessClient client;
 
     public Repl(String port) {
-        client = new ChessClient(port, this);
+        client = new ChessClient(port);
     }
 
     public void run() {
@@ -33,10 +33,5 @@ public class Repl implements MessageHandler {
 
     private void printPrompt() {
         System.out.print("\n" + RESET_TEXT_COLOR + ">>> " + SET_TEXT_BLINKING);
-    }
-
-    @Override
-    public void notify(ServerMessage message) {
-        //TODO
     }
 }
