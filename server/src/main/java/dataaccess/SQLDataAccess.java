@@ -156,9 +156,22 @@ public class SQLDataAccess implements UserDAO, GameDAO, AuthDAO {
     @Override
     public void updateGame(int gameID, ChessGame updatedGame)  throws DataAccessException {
         try {
-            getGame(gameID);
             var statement = "UPDATE games SET game = ? WHERE gameID=?";
             executeUpdate(statement, updatedGame, gameID);
+        } catch(Exception e) {
+            throw new DataAccessException("Error: game doesn't exist");
+        }
+    }
+
+    public void updateGame(int gameID, GameData updatedGameData)  throws DataAccessException {
+        try {
+            String white = updatedGameData.whiteUsername();
+            String black = updatedGameData.blackUsername();
+            String name = updatedGameData.gameName();
+            ChessGame game = updatedGameData.game();
+
+            var statement = "UPDATE games SET whiteUsername = ?, blackUsername = ?, gameName = ?, game = ? WHERE gameID=?";
+            executeUpdate(statement, white, black, name, game, gameID);
         } catch(Exception e) {
             throw new DataAccessException("Error: game doesn't exist");
         }

@@ -106,7 +106,9 @@ public class ChessGame {
 
         resetEnPassant(); //reset en passant for allied pieces (the opportunity to get captured has passed)
         board = board.hypothetical(move); //make the move
-        setTeamTurn(getTeamTurn() == TeamColor.WHITE ? TeamColor.BLACK : TeamColor.WHITE); //pass the turn
+        TeamColor opponent = getTeamTurn() == TeamColor.WHITE ? TeamColor.BLACK : TeamColor.WHITE;
+        setTeamTurn(opponent); //pass the turn
+        gameOver = isInCheckmate(opponent) || isInStalemate(opponent);
     }
 
     void resetEnPassant() {
