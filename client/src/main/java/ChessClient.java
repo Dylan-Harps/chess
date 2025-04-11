@@ -196,7 +196,7 @@ public class ChessClient {
             throw new ResponseException(400, "<WHITE|BLACK> should be either WHITE or BLACK");
         }
         if (allGames == null) {
-            //selectedId uses the result from listGames.
+            //selectedId() uses the result from listGames.
             // If they haven't called listGames yet, do it for them
             listGames();
         }
@@ -204,6 +204,7 @@ public class ChessClient {
         //join the game
         try {
             serverFacade.joinGame(new JoinGameRequest(authToken, teamColor, selectGameID(selectedId)));
+            webSocketFacade.connectToGame(username, authToken, selectGameID(selectedId), teamColor);
         } catch (Exception e) {
             if (e.getMessage().equals("Invalid game ID")) {
                 throw e;
@@ -227,11 +228,19 @@ public class ChessClient {
             throw new ResponseException(400, "<ID> should be an integer");
         }
         if (allGames == null) {
-            //selectedId uses the result from listGames.
+            //selectedId() uses the result from listGames.
             // If they haven't called listGames yet, do it for them
             listGames();
         }
 
+        try {
+            webSocketFacade.connectToGame(username, authToken, selectGameID(selectedId), null);
+        } catch (Exception e) {
+            if (e.getMessage().equals("Invalid game ID")) {
+                throw e;
+            }
+            throw new ResponseException(500, e.getMessage());
+        }
         return displayGame(selectGameID(selectedId), "WHITE");
     }
 
@@ -260,7 +269,7 @@ public class ChessClient {
         return chosenGame;
     }
 
-    private String displayGame(int dbID, String teamColor) {
+    public String displayGame(int dbID, String teamColor) {
         GameData chosenGame = selectGameData(dbID);
 
         //create and set up the board with labels

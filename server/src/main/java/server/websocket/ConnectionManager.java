@@ -51,4 +51,23 @@ public class ConnectionManager {
             remove(gameID, c.participant);
         }
     }
+
+    public void send(int gameID, String recipient, ServerMessage notification) throws IOException {
+        var removeList = new ArrayList<Connection>();
+        var gameConnections = connections.get(gameID);
+        for (var c : gameConnections) {
+            if (c.session.isOpen()) {
+                if (c.participant.equals(recipient)) {
+                    c.send(notification.toString());
+                }
+            } else {
+                removeList.add(c);
+            }
+        }
+
+        // Clean up any connections that were left open.
+        for (var c : removeList) {
+            remove(gameID, c.participant);
+        }
+    }
 }

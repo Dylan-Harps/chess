@@ -6,6 +6,8 @@ import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import websocket.commands.*;
+import websocket.messages.LoadGameMessage;
+import websocket.messages.NotificationMessage;
 import websocket.messages.ServerMessage;
 
 import java.io.IOException;
@@ -32,8 +34,9 @@ public class WebSocketHandler {
         String teamColor = command.getTeamColor() == null ? "an observer" : command.getTeamColor();
 
         connections.add(gameID, participant, session);
+        connections.send(gameID, participant, new LoadGameMessage(ServerMessage.ServerMessageType.LOAD_GAME));
         var message = String.format("%s joined the game as %s", participant, teamColor);
-        var notification = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME, message);
+        var notification = new NotificationMessage(ServerMessage.ServerMessageType.NOTIFICATION, message);
         connections.broadcast(gameID, participant, notification);
     }
 
@@ -42,7 +45,13 @@ public class WebSocketHandler {
     }
 
     private void leave(Session session, LeaveCommand command) throws IOException {
-        //TODO
+        int gameID = command.getGameID();
+        String participant = command.getUsername();
+
+        connections.remove(gameID, participant);
+        var message = String.format("%s left the game", participant);
+        var notification = new NotificationMessage(ServerMessage.ServerMessageType.NOTIFICATION, message);
+        connections.broadcast(gameID, participant, notification);
     }
 
     private void resign(Session session, ResignCommand command) throws IOException {
@@ -51,13 +60,6 @@ public class WebSocketHandler {
 
     //pet shop examples
     /*
-    private void enter(String visitorName, Session session) throws IOException {
-        connections.add(visitorName, session);
-        var message = String.format("%s is in the shop", visitorName);
-        var notification = new ServerMessage(ServerMessage.Type.ARRIVAL, message);
-        connections.broadcast(visitorName, notification);
-    }
-
     private void exit(String visitorName) throws IOException {
         connections.remove(visitorName);
         var message = String.format("%s left the shop", visitorName);
