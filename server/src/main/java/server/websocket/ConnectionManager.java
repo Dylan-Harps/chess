@@ -60,7 +60,7 @@ public class ConnectionManager {
         for (var c : gameConnections) {
             if (c.session.isOpen()) {
                 if (c.participant.equals(recipient)) {
-                    System.out.println("ConnectionManager.send(): " + new Gson().toJson(notification));
+                    //System.out.println("ConnectionManager.send(): " + new Gson().toJson(notification));
                     c.send(new Gson().toJson(notification));
                 }
             } else {
@@ -75,7 +75,7 @@ public class ConnectionManager {
     }
 
     public void send(Session session, ServerMessage notification) throws IOException {
-        System.out.println("ConnectionManager.send()2: " + new Gson().toJson(notification));
+        //System.out.println("ConnectionManager.send()2: " + new Gson().toJson(notification));
         session.getRemote().sendString(new Gson().toJson(notification));
     }
 }

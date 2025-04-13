@@ -1,6 +1,7 @@
 package server.websocket;
 
 import chess.ChessGame;
+import chess.InvalidMoveException;
 import com.google.gson.Gson;
 import dataaccess.SQLDataAccess;
 import endpoints.ResponseException;
@@ -37,13 +38,13 @@ public class WebSocketHandler {
 
         String participant = null;
         try {
-            participant = verifyUser(command, null);
+            participant = verifyUser(command);
 
             //connect
             connections.add(gameID, participant, session);
 
             //notify loadGame
-            verifyGameID(gameID, participant);
+            verifyGameID(gameID);
             ChessGame game = database.getGame(gameID).game();
             connections.send(gameID, participant, new LoadGameMessage(game));
 
@@ -61,29 +62,37 @@ public class WebSocketHandler {
         }
     }
 
-    private void makeMove(MakeMoveCommand command) throws ResponseException {
+    private void makeMove(MakeMoveCommand command) throws ResponseException, IOException {
+        System.out.println("WebSocketHandler.makeMove(): making move");
         int gameID = command.getGameID();
 
+        String participant = null;
         try {
             //verify user
+            verifyGameID(command.getGameID());
             ChessGame game = database.getGame(gameID).game();
             String team = game.getTeamTurn() == ChessGame.TeamColor.WHITE ? "WHITE" : "BLACK";
-            String participant = verifyUser(command, team);
+            participant = verifyUser(command);
+            verifyTeam(gameID, participant, team);
 
             //make the move
             game.makeMove(command.getMove());
+            System.out.println("WebSocketHandler.makeMove(): updating game");
             database.updateGame(gameID, game);
 
             //notify participants:
             // load game
+            System.out.println("WebSocketHandler.makeMove(): broadcasting board");
             connections.broadcast(gameID, null, new LoadGameMessage(game));
 
             // notify of move
+            System.out.println("WebSocketHandler.makeMove(): broadcasting move");
             var message = String.format("%s made move %s", participant, command.getMove().toString());
             var notification = new NotificationMessage(message);
             connections.broadcast(gameID, participant, notification);
 
             // notify of check, checkmate, or stalemate
+            System.out.println("WebSocketHandler.makeMove(): broadcasting check(mate)s");
             ChessGame.TeamColor opponent = team.equals("WHITE") ? ChessGame.TeamColor.BLACK : ChessGame.TeamColor.WHITE;
             NotificationMessage checkNotification = null;
             if (game.isInCheck(opponent)) {
@@ -98,8 +107,12 @@ public class WebSocketHandler {
             if (checkNotification != null) {
                 connections.broadcast(gameID, null, notification);
             }
+        } catch (InvalidMoveException e) {
+            System.out.println("WebSocketHandler.makeMove(): " + e.getMessage());
+            connections.send(command.getGameID(), participant, new ErrorMessage(e.getMessage()));
         } catch (Exception e) {
-            throw new ResponseException(500, e.getMessage());
+            System.out.println("WebSocketHandler.makeMove(): " + e.getMessage());
+            //connections.send(command.getGameID(), username, new ErrorMessage(e.getMessage()));
         }
     }
 
@@ -107,7 +120,7 @@ public class WebSocketHandler {
         int gameID = command.getGameID();
 
         try {
-            String participant = verifyUser(command, null);
+            String participant = verifyUser(command);
 
             //remove player from the game
             GameData gameData = database.getGame(gameID);
@@ -132,7 +145,8 @@ public class WebSocketHandler {
         int gameID = command.getGameID();
 
         try {
-            String participant = verifyUser(command, "PLAYER");
+            String participant = verifyUser(command);
+            verifyTeam(gameID, participant, "PLAYER");
 
             //mark game as ended
             ChessGame game = database.getGame(gameID).game();
@@ -148,31 +162,14 @@ public class WebSocketHandler {
         }
     }
 
-    private String verifyUser(UserGameCommand command, String assertTeam) throws ResponseException, IOException {
-        System.out.println("WebSocketHandler.verifyUser(): verifying user");
-        String username = null;
+    private String verifyUser(UserGameCommand command) throws ResponseException {
+        //System.out.println("WebSocketHandler.verifyUser(): verifying user");
+        String username;
         try {
             //verify authToken
             AuthData authData = database.getAuth(command.getAuthToken());
             username = authData.username();
             System.out.println("WebSocketHandler.verifyUser(): username = " + username);
-
-            //verify that the participant is the correct player
-            if (assertTeam != null) {
-                System.out.println("WebSocketHandler.verifyUser(): getting gameData with gameID " + command.getGameID());
-                GameData gameData = database.getGame(command.getGameID());
-                boolean isWhite = username.equals(gameData.whiteUsername());
-                boolean isBlack = username.equals(gameData.blackUsername());
-                if (assertTeam.equals("WHITE") && !isWhite) {
-                    throw new ResponseException(401, "Error: unauthorized");
-                }
-                if (assertTeam.equals("BLACK") && !isBlack) {
-                    throw new ResponseException(401, "Error: unauthorized");
-                }
-                if (assertTeam.equals("PLAYER") && !(isWhite || isBlack)) {
-                    throw new ResponseException(401, "Error: unauthorized");
-                }
-            }
         } catch (ResponseException e) {
             throw e;
         } catch (Exception e) {
@@ -181,8 +178,36 @@ public class WebSocketHandler {
         return username;
     }
 
-    public void verifyGameID(int gameID, String username) throws ResponseException, IOException {
-        System.out.println("WebSocketHandler.verifyGameID(): verifying gameID");
+    public void verifyTeam(int gameID, String username, String assertTeam) throws InvalidMoveException, ResponseException {
+        try {
+            //verify that the participant is the correct player
+            if (assertTeam != null) {
+                System.out.println("WebSocketHandler.verifyUser(): getting gameData with gameID " + gameID);
+                GameData gameData = database.getGame(gameID);
+                boolean isWhite = username.equals(gameData.whiteUsername());
+                boolean isBlack = username.equals(gameData.blackUsername());
+
+                if (assertTeam.equals("WHITE") && !isWhite) {
+                    System.out.println("WebSocketHandler.verifyUser(): whiteUser = " + gameData.whiteUsername());
+                    throw new InvalidMoveException("Error: Invalid Move");
+                }
+                if (assertTeam.equals("BLACK") && !isBlack) {
+                    System.out.println("WebSocketHandler.verifyUser(): blackUser = " + gameData.blackUsername());
+                    throw new InvalidMoveException("Error: Invalid Move");
+                }
+                if (assertTeam.equals("PLAYER") && !(isWhite || isBlack)) {
+                    throw new InvalidMoveException("Error: Invalid Move");
+                }
+            }
+        } catch (InvalidMoveException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseException(500, e.getMessage());
+        }
+    }
+
+    public void verifyGameID(int gameID) throws ResponseException {
+        //System.out.println("WebSocketHandler.verifyGameID(): verifying gameID");
         try {
             database.getGame(gameID);
         } catch (Exception e) {

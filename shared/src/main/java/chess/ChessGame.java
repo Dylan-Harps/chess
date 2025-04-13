@@ -101,7 +101,7 @@ public class ChessGame {
                 || getTeamTurn() != board.getPiece(move.initialPos).getTeamColor()
                 || gameOver
                 || !validMoves(move.initialPos).contains(move)) {
-            throw new InvalidMoveException();
+            throw new InvalidMoveException("Error: invalid move");
         }
 
         resetEnPassant(); //reset en passant for allied pieces (the opportunity to get captured has passed)
