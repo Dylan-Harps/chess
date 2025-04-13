@@ -14,11 +14,9 @@ import java.util.UUID;
 
 public class ChessService {
     SQLDataAccess database;
-    WebSocketHandler webSocketHandler;
 
     public ChessService() {
         this.database = new SQLDataAccess();
-        webSocketHandler = new WebSocketHandler(this.database);
         database.clear();
     }
 

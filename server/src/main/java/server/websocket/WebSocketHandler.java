@@ -10,24 +10,18 @@ import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import websocket.commands.*;
-import websocket.messages.ErrorMessage;
-import websocket.messages.LoadGameMessage;
-import websocket.messages.NotificationMessage;
-import websocket.messages.ServerMessage;
+import websocket.messages.*;
 
 import java.io.IOException;
 
 @WebSocket
 public class WebSocketHandler {
     private final ConnectionManager connections = new ConnectionManager();
-    private final SQLDataAccess database;
-
-    public WebSocketHandler(SQLDataAccess database) {
-        this.database = database;
-    }
+    private final SQLDataAccess database = new SQLDataAccess();
 
     @OnWebSocketMessage
     public void onMessage(Session session, String message) throws ResponseException, IOException {
+        System.out.println("WebSocketHandler.onMessage(): receiving command");
         UserGameCommand userGameCommand = new Gson().fromJson(message, UserGameCommand.class);
         switch (userGameCommand.getCommandType()) {
             case CONNECT -> connect(session, new Gson().fromJson(message, ConnectCommand.class));
@@ -38,28 +32,32 @@ public class WebSocketHandler {
     }
 
     private void connect(Session session, ConnectCommand command) throws ResponseException, IOException {
+        System.out.println("WebSocketHandler.connect(): connecting");
         int gameID = command.getGameID();
-        String participant = command.getUsername();
 
+        String participant = null;
         try {
-            verifyUser(command, null);
+            participant = verifyUser(command, null);
 
             //connect
             connections.add(gameID, participant, session);
 
             //notify loadGame
+            verifyGameID(gameID, participant);
             ChessGame game = database.getGame(gameID).game();
             connections.send(gameID, participant, new LoadGameMessage(game));
 
             //notify others of joining the game
-            String teamColor = command.getTeamColor() == null ? "an observer" : command.getTeamColor();
+            String teamColor = getTeamColor(participant, gameID);
+            if (teamColor == null) {
+                teamColor = "an observer";
+            }
             var message = String.format("%s joined the game as %s", participant, teamColor);
             var notification = new NotificationMessage(message);
             connections.broadcast(gameID, participant, notification);
-        } catch (ResponseException e) {
-            connections.send(gameID, command.getUsername(), new ErrorMessage(e.getMessage()));
         } catch (Exception e) {
-            throw new ResponseException(500, e.getMessage());
+            System.out.println("WebSocketHandler.connect(): " + e.getMessage());
+            connections.send(gameID, participant, new ErrorMessage(e.getMessage()));
         }
     }
 
@@ -70,7 +68,7 @@ public class WebSocketHandler {
             //verify user
             ChessGame game = database.getGame(gameID).game();
             String team = game.getTeamTurn() == ChessGame.TeamColor.WHITE ? "WHITE" : "BLACK";
-            verifyUser(command, team);
+            String participant = verifyUser(command, team);
 
             //make the move
             game.makeMove(command.getMove());
@@ -81,9 +79,9 @@ public class WebSocketHandler {
             connections.broadcast(gameID, null, new LoadGameMessage(game));
 
             // notify of move
-            var message = String.format("%s made move %s", command.getUsername(), command.getMove().toString());
+            var message = String.format("%s made move %s", participant, command.getMove().toString());
             var notification = new NotificationMessage(message);
-            connections.broadcast(gameID, command.getUsername(), notification);
+            connections.broadcast(gameID, participant, notification);
 
             // notify of check, checkmate, or stalemate
             ChessGame.TeamColor opponent = team.equals("WHITE") ? ChessGame.TeamColor.BLACK : ChessGame.TeamColor.WHITE;
@@ -107,15 +105,14 @@ public class WebSocketHandler {
 
     private void leave(LeaveCommand command) throws ResponseException {
         int gameID = command.getGameID();
-        String participant = command.getUsername();
 
         try {
-            verifyUser(command, null);
+            String participant = verifyUser(command, null);
 
             //remove player from the game
             GameData gameData = database.getGame(gameID);
-            String newWhite = command.getUsername().equals(gameData.whiteUsername()) ? null : gameData.whiteUsername();
-            String newBlack = command.getUsername().equals(gameData.blackUsername()) ? null : gameData.blackUsername();
+            String newWhite = participant.equals(gameData.whiteUsername()) ? null : gameData.whiteUsername();
+            String newBlack = participant.equals(gameData.blackUsername()) ? null : gameData.blackUsername();
             GameData newGameData = new GameData(gameID, newWhite, newBlack, gameData.gameName(), gameData.game());
             database.updateGame(gameID, newGameData);
 
@@ -135,7 +132,7 @@ public class WebSocketHandler {
         int gameID = command.getGameID();
 
         try {
-            verifyUser(command, "PLAYER");
+            String participant = verifyUser(command, "PLAYER");
 
             //mark game as ended
             ChessGame game = database.getGame(gameID).game();
@@ -143,7 +140,7 @@ public class WebSocketHandler {
             database.updateGame(gameID, game);
 
             //notify participants
-            var message = String.format("%s resigned", command.getUsername());
+            var message = String.format("%s resigned", participant);
             var notification = new NotificationMessage(message);
             connections.broadcast(gameID, null, notification);
         } catch (Exception e) {
@@ -151,20 +148,21 @@ public class WebSocketHandler {
         }
     }
 
-    private void verifyUser(UserGameCommand command, String assertTeam) throws ResponseException {
+    private String verifyUser(UserGameCommand command, String assertTeam) throws ResponseException, IOException {
+        System.out.println("WebSocketHandler.verifyUser(): verifying user");
+        String username = null;
         try {
             //verify authToken
             AuthData authData = database.getAuth(command.getAuthToken());
+            username = authData.username();
+            System.out.println("WebSocketHandler.verifyUser(): username = " + username);
 
-            //verify that the authToken and username match
-            if (!authData.username().equals(command.getUsername())) {
-                throw new ResponseException(401, "Error: unauthorized");
-            }
             //verify that the participant is the correct player
             if (assertTeam != null) {
+                System.out.println("WebSocketHandler.verifyUser(): getting gameData with gameID " + command.getGameID());
                 GameData gameData = database.getGame(command.getGameID());
-                boolean isWhite = command.getUsername().equals(gameData.whiteUsername());
-                boolean isBlack = command.getUsername().equals(gameData.blackUsername());
+                boolean isWhite = username.equals(gameData.whiteUsername());
+                boolean isBlack = username.equals(gameData.blackUsername());
                 if (assertTeam.equals("WHITE") && !isWhite) {
                     throw new ResponseException(401, "Error: unauthorized");
                 }
@@ -177,6 +175,31 @@ public class WebSocketHandler {
             }
         } catch (ResponseException e) {
             throw e;
+        } catch (Exception e) {
+            throw new ResponseException(500, e.getMessage());
+        }
+        return username;
+    }
+
+    public void verifyGameID(int gameID, String username) throws ResponseException, IOException {
+        System.out.println("WebSocketHandler.verifyGameID(): verifying gameID");
+        try {
+            database.getGame(gameID);
+        } catch (Exception e) {
+            throw new ResponseException(400, "Error: unauthorized");
+        }
+    }
+
+    private String getTeamColor(String username, int gameID) {
+        try {
+            GameData game = database.getGame(gameID);
+            if (username.equals(game.whiteUsername())) {
+                return "WHITE";
+            }
+            if (username.equals(game.blackUsername())) {
+                return "BLACK";
+            }
+            return null;
         } catch (Exception e) {
             throw new ResponseException(500, e.getMessage());
         }

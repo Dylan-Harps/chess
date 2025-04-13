@@ -13,6 +13,8 @@ import java.util.Collection;
 
 import static ui.EscapeSequences.*;
 
+//FIXME: I wanted to have ChessClient and Chess Player be separate, but I think they'll need to be combined
+
 public class ChessPlayer {
     private final ServerFacade serverFacade;
     private final WebSocketFacade webSocketFacade;

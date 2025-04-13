@@ -8,7 +8,8 @@ import spark.*;
 import endpoints.*;
 
 public class Server {
-    private final ChessHandler handler = new ChessHandler();
+    private final ChessHandler chessHandler = new ChessHandler();
+    private final WebSocketHandler webSocketHandler = new WebSocketHandler();
 
     public int run(int desiredPort) {
         Spark.port(desiredPort);
@@ -16,7 +17,7 @@ public class Server {
         Spark.staticFiles.location("web");
 
         //This line initializes the server and can be removed once you have a functioning endpoint 
-        Spark.webSocket("/ws", handler);
+        Spark.webSocket("/ws", webSocketHandler);
 
         Spark.post("/user", this::register);
         Spark.post("/session", this::login);
@@ -37,29 +38,28 @@ public class Server {
     }
 
     private Object register(Request request, Response response) throws ResponseException {
-        System.out.println("entered Server.register");
         RegisterRequest registerRequest = new Gson().fromJson(request.body(), RegisterRequest.class);
-        RegisterResult registerResult = handler.register(registerRequest);
+        RegisterResult registerResult = chessHandler.register(registerRequest);
         return new Gson().toJson(registerResult);
     }
 
     private Object login(Request request, Response response) throws ResponseException {
         LoginRequest loginRequest = new Gson().fromJson(request.body(), LoginRequest.class);
-        LoginResult loginResult = handler.login(loginRequest);
+        LoginResult loginResult = chessHandler.login(loginRequest);
         return new Gson().toJson(loginResult);
     }
 
     private Object logout(Request request, Response response) throws ResponseException {
         String authToken = request.headers("authorization");
         LogoutRequest logoutRequest = new LogoutRequest(authToken);
-        LogoutResult logoutResult = handler.logout(logoutRequest);
+        LogoutResult logoutResult = chessHandler.logout(logoutRequest);
         return new Gson().toJson(logoutResult);
     }
 
     private Object listGames(Request request, Response response) throws ResponseException {
         String authToken = request.headers("authorization");
         ListGamesRequest listGamesRequest = new ListGamesRequest(authToken);
-        ListGamesResult listGamesResult = handler.listGames(listGamesRequest);
+        ListGamesResult listGamesResult = chessHandler.listGames(listGamesRequest);
         return new Gson().toJson(listGamesResult);
     }
 
@@ -67,7 +67,7 @@ public class Server {
         String authToken = request.headers("authorization");
         CreateGameRequest temp = new Gson().fromJson(request.body(), CreateGameRequest.class);
         CreateGameRequest createGameRequest = new CreateGameRequest(authToken, temp.gameName());
-        CreateGameResult createGameResult = handler.createGame(createGameRequest);
+        CreateGameResult createGameResult = chessHandler.createGame(createGameRequest);
         return new Gson().toJson(createGameResult);
     }
 
@@ -75,12 +75,12 @@ public class Server {
         String authToken = request.headers("authorization");
         JoinGameRequest temp = new Gson().fromJson(request.body(), JoinGameRequest.class);
         JoinGameRequest joinGameRequest = new JoinGameRequest(authToken, temp.playerColor(), temp.gameID());
-        JoinGameResult joinGameResult = handler.joinGame(joinGameRequest);
+        JoinGameResult joinGameResult = chessHandler.joinGame(joinGameRequest);
         return new Gson().toJson(joinGameResult);
     }
 
     private Object clear(Request request, Response response) throws ResponseException {
-        ClearResult clearResult = handler.clear(new ClearRequest());
+        ClearResult clearResult = chessHandler.clear(new ClearRequest());
         return new Gson().toJson(clearResult);
     }
 

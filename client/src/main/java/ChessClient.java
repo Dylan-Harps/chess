@@ -21,6 +21,11 @@ public class ChessClient implements MessageHandler {
     private String username = null;
     private String authToken = null;
     private boolean isLoggedIn = false;
+    private boolean isInGame = false;
+
+    //game info (when playing)
+    private String team;
+    private GameData gameData;
 
     //store gamesList
     Integer nextClientGameID = 1;
@@ -78,13 +83,20 @@ public class ChessClient implements MessageHandler {
     }
 
     public String quit() {
-        if (isLoggedIn) {
-            logout();
+        try {
+            assertOnlyAccessibleIfLoggedOut();
+        } catch (Exception e) {
+            return help();
         }
         return "quit";
     }
 
     public String login(String... params) throws ResponseException {
+        try {
+            assertOnlyAccessibleIfLoggedOut();
+        } catch (Exception e) {
+            return help();
+        }
         //sanitize input
         if (params.length != 2) {
             throw new ResponseException(400, "Expected: login <USERNAME> <PASSWORD>");
@@ -109,6 +121,11 @@ public class ChessClient implements MessageHandler {
     }
 
     public String register(String... params) throws ResponseException {
+        try {
+            assertOnlyAccessibleIfLoggedOut();
+        } catch (Exception e) {
+            return help();
+        }
         //sanitize input
         if (params.length != 3) {
             throw new ResponseException(400, "Expected: register <USERNAME> <PASSWORD> <EMAIL>");
@@ -208,7 +225,8 @@ public class ChessClient implements MessageHandler {
             serverFacade.joinGame(new JoinGameRequest(authToken, teamColor, selectGameID(selectedId)));
             GameData gameData = selectGameData(selectGameID(selectedId));
             chessPlayer = new ChessPlayer(serverFacade, webSocketFacade, gameData, teamColor);
-            webSocketFacade.connectToGame(username, authToken, selectGameID(selectedId), teamColor);
+            System.out.println("ChessClient.joinGame(): joining the game");
+            webSocketFacade.connectToGame(authToken, selectGameID(selectedId));
         } catch (Exception e) {
             if (e.getMessage().equals("Invalid game ID")) {
                 throw e;
@@ -241,7 +259,7 @@ public class ChessClient implements MessageHandler {
         try {
             GameData gameData = selectGameData(selectGameID(selectedId));
             chessPlayer = new ChessPlayer(serverFacade, webSocketFacade, gameData, "observer");
-            webSocketFacade.connectToGame(username, authToken, selectGameID(selectedId), null);
+            webSocketFacade.connectToGame(authToken, selectGameID(selectedId));
         } catch (Exception e) {
             if (e.getMessage().equals("Invalid game ID")) {
                 throw e;
@@ -254,6 +272,24 @@ public class ChessClient implements MessageHandler {
     private void assertLoggedIn() throws ResponseException {
         if (!isLoggedIn) {
             throw new ResponseException(400, "You must sign in first");
+        }
+    }
+
+    private void assertOnlyAccessibleIfLoggedOut() throws ResponseException {
+        if (isLoggedIn) {
+            throw new ResponseException(400, "That option is not available");
+        }
+    }
+
+    private void assertOnlyAccessibleIfInGame() throws ResponseException {
+        if (!isInGame) {
+            throw new ResponseException(400, "That option is not available");
+        }
+    }
+
+    private void assertOnlyAccessibleIfPlayer() throws ResponseException {
+        if (!team.equals("observer")) {
+            throw new ResponseException(400, "That option is not available");
         }
     }
 
@@ -361,6 +397,5 @@ public class ChessClient implements MessageHandler {
     @Override
     public void notify(ServerMessage message) {
         //TODO
-        // just return whatever the ChessPlayer does
     }
 }
