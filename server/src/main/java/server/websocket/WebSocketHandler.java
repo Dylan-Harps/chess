@@ -26,9 +26,9 @@ public class WebSocketHandler {
         UserGameCommand userGameCommand = new Gson().fromJson(message, UserGameCommand.class);
         switch (userGameCommand.getCommandType()) {
             case CONNECT -> connect(session, new Gson().fromJson(message, ConnectCommand.class));
-            case MAKE_MOVE -> makeMove(new Gson().fromJson(message, MakeMoveCommand.class));
-            case LEAVE -> leave(new Gson().fromJson(message, LeaveCommand.class));
-            case RESIGN -> resign(new Gson().fromJson(message, ResignCommand.class));
+            case MAKE_MOVE -> makeMove(session, new Gson().fromJson(message, MakeMoveCommand.class));
+            case LEAVE -> leave(session, new Gson().fromJson(message, LeaveCommand.class));
+            case RESIGN -> resign(session, new Gson().fromJson(message, ResignCommand.class));
         }
     }
 
@@ -62,7 +62,7 @@ public class WebSocketHandler {
         }
     }
 
-    private void makeMove(MakeMoveCommand command) throws ResponseException, IOException {
+    private void makeMove(Session session, MakeMoveCommand command) throws ResponseException, IOException {
         System.out.println("WebSocketHandler.makeMove(): making move");
         int gameID = command.getGameID();
 
@@ -77,22 +77,18 @@ public class WebSocketHandler {
 
             //make the move
             game.makeMove(command.getMove());
-            System.out.println("WebSocketHandler.makeMove(): updating game");
             database.updateGame(gameID, game);
 
             //notify participants:
             // load game
-            System.out.println("WebSocketHandler.makeMove(): broadcasting board");
             connections.broadcast(gameID, null, new LoadGameMessage(game));
 
             // notify of move
-            System.out.println("WebSocketHandler.makeMove(): broadcasting move");
             var message = String.format("%s made move %s", participant, command.getMove().toString());
             var notification = new NotificationMessage(message);
             connections.broadcast(gameID, participant, notification);
 
             // notify of check, checkmate, or stalemate
-            System.out.println("WebSocketHandler.makeMove(): broadcasting check(mate)s");
             ChessGame.TeamColor opponent = team.equals("WHITE") ? ChessGame.TeamColor.BLACK : ChessGame.TeamColor.WHITE;
             NotificationMessage checkNotification = null;
             if (game.isInCheck(opponent)) {
@@ -112,11 +108,11 @@ public class WebSocketHandler {
             connections.send(command.getGameID(), participant, new ErrorMessage(e.getMessage()));
         } catch (Exception e) {
             System.out.println("WebSocketHandler.makeMove(): " + e.getMessage());
-            //connections.send(command.getGameID(), username, new ErrorMessage(e.getMessage()));
+            connections.send(session, new ErrorMessage(e.getMessage()));
         }
     }
 
-    private void leave(LeaveCommand command) throws ResponseException {
+    private void leave(Session session, LeaveCommand command) throws ResponseException {
         int gameID = command.getGameID();
 
         try {
@@ -141,7 +137,7 @@ public class WebSocketHandler {
         }
     }
 
-    private void resign(ResignCommand command) throws ResponseException {
+    private void resign(Session session, ResignCommand command) throws ResponseException {
         int gameID = command.getGameID();
 
         try {
