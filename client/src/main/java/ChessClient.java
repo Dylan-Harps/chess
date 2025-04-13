@@ -7,13 +7,12 @@ import model.GameData;
 import ui.ServerFacade;
 import websocket.MessageHandler;
 import websocket.WebSocketFacade;
-import websocket.messages.ServerMessage;
 
 import java.util.*;
 
 import static ui.EscapeSequences.*;
 
-public class ChessClient implements MessageHandler {
+public class ChessClient {
     private final ServerFacade serverFacade;
     private final WebSocketFacade webSocketFacade;
 
@@ -37,9 +36,9 @@ public class ChessClient implements MessageHandler {
     private Map<Integer, Integer> gameIdList = new TreeMap<>(); //<client id, database id>
     private Collection<GameData> allGames = null;
 
-    public ChessClient(String port) {
+    public ChessClient(String port, MessageHandler messageHandler) {
         serverFacade = new ServerFacade("http://localhost:" + port);
-        webSocketFacade = new WebSocketFacade("http://localhost:" + port, this);
+        webSocketFacade = new WebSocketFacade("http://localhost:" + port, messageHandler);
     }
 
     public String eval(String input) {
@@ -98,8 +97,9 @@ public class ChessClient implements MessageHandler {
                     Available options are:
                     redraw chess board - display the board
                     leave - leave the game
-                    make move - move a piece
-                    resign - concede the game to your opponent
+                    make move <FROM POSITION> <TO POSITION> - move a piece
+                    make move <FROM POSITION> <TO POSITION> <PROMOTION> - move and promote a piece
+                    resign - surrender the game to your opponent
                     highlight legal moves <POSITION> - show selected piece's possible moves
                     help - list available commands
                     """;
@@ -252,8 +252,7 @@ public class ChessClient implements MessageHandler {
             }
             throw new ResponseException(400, teamColor + " team is already taken");
         }
-
-        return displayGame(teamColor); //TODO delete?
+        return "";
     }
     public String observeGame(String... params) throws ResponseException {
         assertLoggedIn();
@@ -285,18 +284,12 @@ public class ChessClient implements MessageHandler {
             }
             throw new ResponseException(500, e.getMessage());
         }
-        return displayGame("WHITE"); //TODO delete?
+        return "";
     }
 
     //gameplay UI
-    @Override
-    public void notify(ServerMessage message) {
-        //TODO
-        //if load, print board
-        //if error, print error
-        //if notify, print message
-    }
     public String redrawChessBoard(String... params) throws ResponseException {
+        assertInGame();
         //sanitize input
         if (params.length != 2
                 || !(params[0].equals("chess") || params[1].equals("board"))) {
@@ -304,22 +297,50 @@ public class ChessClient implements MessageHandler {
         }
 
         //display the game
-        return displayGameHighlight(team, null, null);
+        return displayGame();
     }
-
     public String leave() throws ResponseException {
-        return null;
+        assertInGame();
+        try {
+            webSocketFacade.leaveGame(authToken, gameData.gameID());
+            state = PlayerState.LOGGED_IN;
+            team = null;
+            gameData = null;
+        } catch (Exception e) {
+            throw new ResponseException(500, e.getMessage());
+        }
+        return "";
     }
-
     public String makeMove(String... params) throws ResponseException {
-        return null;
-    }
+        assertPlayer();
+        //sanitize and parse input
+        if (params.length < 3 || params.length > 4 || !params[0].equals("move")) {
+            throw new ResponseException(400, "Expected: make move <FROM POSITION> <TO POSITION> <PROMOTION>");
+        }
+        ChessPosition start = parsePosition(params[1]);
+        ChessPosition end = parsePosition(params[2]);
+        ChessPiece.PieceType promotion = params.length == 4 ? parsePromotion(params[3]) : null;
+        ChessMove move = new ChessMove(start, end, promotion);
 
+        //make the move
+        try {
+            webSocketFacade.makeMove(authToken, gameData.gameID(), move);
+        } catch (Exception e) {
+            throw new ResponseException(500, e.getMessage());
+        }
+        return "";
+    }
     public String resign() throws ResponseException {
-        return null;
+        assertPlayer();
+        try {
+            webSocketFacade.resign(authToken, gameData.gameID());
+        } catch (Exception e) {
+            throw new ResponseException(500, e.getMessage());
+        }
+        return "";
     }
-
     public String highlightLegalMoves(String... params) throws ResponseException {
+        assertInGame();
         //sanitize input
         if (params.length != 3
                 || !(params[0].equals("legal") || params[1].equals("moves"))) {
@@ -334,14 +355,16 @@ public class ChessClient implements MessageHandler {
 
         //display the board with highlights
         var highlightMoves = gameData.game().validMoves(target);
-        return displayGameHighlight(team, finalPositionsOf(highlightMoves), target);
+        return displayGameHighlight(finalPositionsOf(highlightMoves), target);
     }
 
     //helper functions
     //assert playerState
     private void assertLoggedIn() throws ResponseException {
-        if (state != PlayerState.LOGGED_IN) {
+        if (state == PlayerState.LOGGED_OUT) {
             throw new ResponseException(400, "You must sign in first");
+        } else if (state != PlayerState.LOGGED_IN) {
+            throw new ResponseException(400, "You must leave the game first");
         }
     }
     private void assertLoggedOut() throws ResponseException {
@@ -349,14 +372,14 @@ public class ChessClient implements MessageHandler {
             throw new ResponseException(400, "You must log out first");
         }
     }
-    private void assertObserver() throws ResponseException {
-        if (state != PlayerState.OBSERVING) {
-            throw new ResponseException(400, "You must observe a game first");
+    private void assertInGame() throws ResponseException {
+        if (!(state == PlayerState.PLAYING || state == PlayerState.OBSERVING)) {
+            throw new ResponseException(400, "You must join a game first");
         }
     }
     private void assertPlayer() throws ResponseException {
         if (state != PlayerState.PLAYING) {
-            throw new ResponseException(400, "You must join a game first");
+            throw new ResponseException(400, "You must be a player in the game");
         }
     }
     //getting game info
@@ -377,7 +400,10 @@ public class ChessClient implements MessageHandler {
         }
         return chosenGame;
     }
-    //
+    public void updateGameData(ChessGame updatedChessGame) {
+        gameData = new GameData(gameData.gameID(), gameData.whiteUsername(), gameData.blackUsername(), gameData.gameName(), updatedChessGame);
+    }
+    //chess positions
     private ChessPosition parsePosition(String position) throws ResponseException {
         int col;
         int row;
@@ -397,6 +423,15 @@ public class ChessClient implements MessageHandler {
         }
         return new ChessPosition(row, col);
     }
+    private ChessPiece.PieceType parsePromotion(String promoteTo) throws ResponseException {
+        return switch (promoteTo.toLowerCase()) {
+            case "q", "queen" -> ChessPiece.PieceType.QUEEN;
+            case "n", "knight" -> ChessPiece.PieceType.KNIGHT;
+            case "b", "bishop" -> ChessPiece.PieceType.BISHOP;
+            case "r", "rook" -> ChessPiece.PieceType.ROOK;
+            default -> throw new ResponseException(400, "<PROMOTION> should be a valid chess piece");
+        };
+    }
     private Collection<ChessPosition> finalPositionsOf(Collection<ChessMove> moves) {
         Collection<ChessPosition> positions = new ArrayList<>();
         for (ChessMove m : moves) {
@@ -406,7 +441,7 @@ public class ChessClient implements MessageHandler {
     }
 
     //displaying the board
-    public String displayGame(String teamColor) {
+    public String displayGame() {
         //create and set up the board
         String[][] tempBoard = setUpBoardLabels();
         putPiecesOnBoardHighlight(tempBoard, gameData);
@@ -414,7 +449,7 @@ public class ChessClient implements MessageHandler {
         //turn tempBoard into a String, reversing it if viewing from black's perspective
         StringBuilder result = new StringBuilder();
         result.append(gameData.gameName()).append(":\n");
-        flipBoardIfNeeded(result, teamColor, tempBoard);
+        flipBoardIfNeeded(result, tempBoard);
 
         return result.toString();
     }
@@ -463,9 +498,9 @@ public class ChessClient implements MessageHandler {
         String color = (p.getTeamColor() == ChessGame.TeamColor.WHITE ? SET_TEXT_COLOR_RED : SET_TEXT_COLOR_BLUE);
         return " " + color + p.toString().toUpperCase() + " ";
     }
-    private void flipBoardIfNeeded(StringBuilder result, String teamColor, String[][] board) {
-        int start = (teamColor.equals("WHITE") ? 0 : 9);
-        int direction = (teamColor.equals("WHITE") ? 1 : -1);
+    private void flipBoardIfNeeded(StringBuilder result, String[][] board) {
+        int start = (team.equals("WHITE") || team.equals("observer") ? 0 : 9);
+        int direction = (team.equals("WHITE") || team.equals("observer") ? 1 : -1);
 
         for (int r = start; withinDisplayBounds(r); r += direction) {
             for (int c = start; withinDisplayBounds(c); c += direction) {
@@ -478,7 +513,7 @@ public class ChessClient implements MessageHandler {
         return i >= 0 && i <= 9;
     }
     //displaying the board with highlights
-    public String displayGameHighlight(String teamColor, Collection<ChessPosition> highlight, ChessPosition target) {
+    public String displayGameHighlight(Collection<ChessPosition> highlight, ChessPosition target) {
         //create and set up the board with labels
         String[][] tempBoard = setUpBoardLabels();
 
@@ -488,7 +523,7 @@ public class ChessClient implements MessageHandler {
         //turn tempBoard into a String, reversing it if viewing from black's perspective
         StringBuilder result = new StringBuilder();
         result.append(gameData.gameName()).append(":\n");
-        flipBoardIfNeeded(result, teamColor, tempBoard);
+        flipBoardIfNeeded(result, tempBoard);
 
         return result.toString();
     }
