@@ -22,7 +22,6 @@ public class WebSocketHandler {
 
     @OnWebSocketMessage
     public void onMessage(Session session, String message) throws ResponseException, IOException {
-        System.out.println("WebSocketHandler.onMessage(): receiving command");
         UserGameCommand userGameCommand = new Gson().fromJson(message, UserGameCommand.class);
         switch (userGameCommand.getCommandType()) {
             case CONNECT -> connect(session, new Gson().fromJson(message, ConnectCommand.class));
@@ -33,10 +32,9 @@ public class WebSocketHandler {
     }
 
     private void connect(Session session, ConnectCommand command) throws ResponseException, IOException {
-        System.out.println("WebSocketHandler.connect(): connecting");
         int gameID = command.getGameID();
-
         String participant = null;
+
         try {
             participant = verifyUser(command);
 
@@ -57,13 +55,11 @@ public class WebSocketHandler {
             var notification = new NotificationMessage(message);
             connections.broadcast(gameID, participant, notification);
         } catch (Exception e) {
-            System.out.println("WebSocketHandler.connect(): " + e.getMessage());
             connections.send(session, new ErrorMessage(e.getMessage()));
         }
     }
 
     private void makeMove(Session session, MakeMoveCommand command) throws ResponseException, IOException {
-        System.out.println("WebSocketHandler.makeMove(): making move");
         int gameID = command.getGameID();
 
         String participant = null;
@@ -103,11 +99,7 @@ public class WebSocketHandler {
             if (checkNotification != null) {
                 connections.broadcast(gameID, null, notification);
             }
-        } catch (InvalidMoveException e) {
-            System.out.println("WebSocketHandler.makeMove(): " + e.getMessage());
-            connections.send(command.getGameID(), participant, new ErrorMessage(e.getMessage()));
         } catch (Exception e) {
-            System.out.println("WebSocketHandler.makeMove(): " + e.getMessage());
             connections.send(session, new ErrorMessage(e.getMessage()));
         }
     }
@@ -133,7 +125,6 @@ public class WebSocketHandler {
             var notification = new NotificationMessage(message);
             connections.broadcast(gameID, participant, notification);
         } catch (Exception e) {
-            System.out.println("WebSocketHandler.makeMove(): " + e.getMessage());
             connections.send(session, new ErrorMessage(e.getMessage()));
         }
     }
@@ -159,13 +150,11 @@ public class WebSocketHandler {
             var notification = new NotificationMessage(message);
             connections.broadcast(gameID, null, notification);
         } catch (Exception e) {
-            System.out.println("WebSocketHandler.makeMove(): " + e.getMessage());
             connections.send(session, new ErrorMessage(e.getMessage()));
         }
     }
 
     private String verifyUser(UserGameCommand command) throws ResponseException {
-        //System.out.println("WebSocketHandler.verifyUser(): verifying user");
         String username;
         try {
             //verify authToken
@@ -209,7 +198,6 @@ public class WebSocketHandler {
     }
 
     public void verifyGameID(int gameID) throws ResponseException {
-        //System.out.println("WebSocketHandler.verifyGameID(): verifying gameID");
         try {
             database.getGame(gameID);
         } catch (Exception e) {

@@ -15,7 +15,7 @@ import static ui.EscapeSequences.*;
 public class ChessClient implements MessageHandler {
     private final ServerFacade serverFacade;
     private final WebSocketFacade webSocketFacade;
-    private ChessPlayer chessPlayer = null;
+    private GameplayUI gameplayUI = null;
 
     //user info
     private String username = null;
@@ -224,7 +224,7 @@ public class ChessClient implements MessageHandler {
         try {
             serverFacade.joinGame(new JoinGameRequest(authToken, teamColor, selectGameID(selectedId)));
             GameData gameData = selectGameData(selectGameID(selectedId));
-            chessPlayer = new ChessPlayer(serverFacade, webSocketFacade, gameData, teamColor);
+            gameplayUI = new GameplayUI(serverFacade, webSocketFacade, gameData, teamColor);
             System.out.println("ChessClient.joinGame(): joining the game");
             webSocketFacade.connectToGame(authToken, selectGameID(selectedId));
         } catch (Exception e) {
@@ -258,7 +258,7 @@ public class ChessClient implements MessageHandler {
         //join game as observer
         try {
             GameData gameData = selectGameData(selectGameID(selectedId));
-            chessPlayer = new ChessPlayer(serverFacade, webSocketFacade, gameData, "observer");
+            gameplayUI = new GameplayUI(serverFacade, webSocketFacade, gameData, "observer");
             webSocketFacade.connectToGame(authToken, selectGameID(selectedId));
         } catch (Exception e) {
             if (e.getMessage().equals("Invalid game ID")) {

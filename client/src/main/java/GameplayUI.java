@@ -13,9 +13,9 @@ import java.util.Collection;
 
 import static ui.EscapeSequences.*;
 
-//FIXME: I wanted to have ChessClient and Chess Player be separate, but I think they'll need to be combined
+//FIXME: I wanted to have ChessClient and GameplayUI be separate, but I think they'll need to be combined
 
-public class ChessPlayer {
+public class GameplayUI {
     private final ServerFacade serverFacade;
     private final WebSocketFacade webSocketFacade;
 
@@ -23,7 +23,7 @@ public class ChessPlayer {
     private String team;
     private GameData gameData;
 
-    public ChessPlayer(ServerFacade serverFacade, WebSocketFacade webSocketFacade, GameData gameData, String team) {
+    public GameplayUI(ServerFacade serverFacade, WebSocketFacade webSocketFacade, GameData gameData, String team) {
         this.serverFacade = serverFacade;
         this.webSocketFacade = webSocketFacade;
         this.gameData = gameData;
