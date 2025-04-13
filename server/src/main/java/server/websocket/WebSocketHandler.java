@@ -112,7 +112,7 @@ public class WebSocketHandler {
         }
     }
 
-    private void leave(Session session, LeaveCommand command) throws ResponseException {
+    private void leave(Session session, LeaveCommand command) throws ResponseException, IOException {
         int gameID = command.getGameID();
 
         try {
@@ -133,11 +133,12 @@ public class WebSocketHandler {
             var notification = new NotificationMessage(message);
             connections.broadcast(gameID, participant, notification);
         } catch (Exception e) {
-            throw new ResponseException(500, e.getMessage());
+            System.out.println("WebSocketHandler.makeMove(): " + e.getMessage());
+            connections.send(session, new ErrorMessage(e.getMessage()));
         }
     }
 
-    private void resign(Session session, ResignCommand command) throws ResponseException {
+    private void resign(Session session, ResignCommand command) throws ResponseException, IOException {
         int gameID = command.getGameID();
 
         try {
@@ -146,15 +147,20 @@ public class WebSocketHandler {
 
             //mark game as ended
             ChessGame game = database.getGame(gameID).game();
-            game.setGameOver();
-            database.updateGame(gameID, game);
+            if (!game.getGameOver()) {
+                game.setGameOver();
+                database.updateGame(gameID, game);
+            } else {
+                throw new InvalidMoveException("Error: Invalid Move");
+            }
 
             //notify participants
             var message = String.format("%s resigned", participant);
             var notification = new NotificationMessage(message);
             connections.broadcast(gameID, null, notification);
         } catch (Exception e) {
-            throw new ResponseException(500, e.getMessage());
+            System.out.println("WebSocketHandler.makeMove(): " + e.getMessage());
+            connections.send(session, new ErrorMessage(e.getMessage()));
         }
     }
 

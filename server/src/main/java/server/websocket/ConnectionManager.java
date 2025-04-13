@@ -54,7 +54,7 @@ public class ConnectionManager {
     }
 
     public void send(int gameID, String recipient, ServerMessage notification) throws IOException {
-        System.out.println("ConnectionManager.send(): sending");
+        //System.out.println("ConnectionManager.send(): sending");
         var removeList = new ArrayList<Connection>();
         var gameConnections = connections.get(gameID);
         for (var c : gameConnections) {
