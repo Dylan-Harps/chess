@@ -73,4 +73,9 @@ public class ConnectionManager {
             remove(gameID, c.participant);
         }
     }
+
+    public void send(Session session, ServerMessage notification) throws IOException {
+        System.out.println("ConnectionManager.send()2: " + new Gson().toJson(notification));
+        session.getRemote().sendString(new Gson().toJson(notification));
+    }
 }

@@ -57,7 +57,7 @@ public class WebSocketHandler {
             connections.broadcast(gameID, participant, notification);
         } catch (Exception e) {
             System.out.println("WebSocketHandler.connect(): " + e.getMessage());
-            connections.send(gameID, participant, new ErrorMessage(e.getMessage()));
+            connections.send(session, new ErrorMessage(e.getMessage()));
         }
     }
 
