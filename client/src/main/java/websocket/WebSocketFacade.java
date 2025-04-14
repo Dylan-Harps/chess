@@ -4,6 +4,9 @@ import chess.ChessMove;
 import com.google.gson.Gson;
 import endpoints.ResponseException;
 import websocket.commands.*;
+import websocket.messages.ErrorMessage;
+import websocket.messages.LoadGameMessage;
+import websocket.messages.NotificationMessage;
 import websocket.messages.ServerMessage;
 
 import javax.websocket.*;
@@ -31,6 +34,11 @@ public class WebSocketFacade extends Endpoint {
                 @Override
                 public void onMessage(String message) {
                     ServerMessage serverMessage = new Gson().fromJson(message, ServerMessage.class);
+                    serverMessage = switch (serverMessage.getServerMessageType()) {
+                        case NOTIFICATION -> new Gson().fromJson(message, NotificationMessage.class);
+                        case ERROR -> new Gson().fromJson(message, ErrorMessage.class);
+                        case LOAD_GAME -> new Gson().fromJson(message, LoadGameMessage.class);
+                    };
                     messageHandler.notify(serverMessage);
                 }
             });

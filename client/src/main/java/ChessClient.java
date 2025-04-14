@@ -61,7 +61,6 @@ public class ChessClient {
                 case "resign" -> resign();
                 case "highlight" -> highlightLegalMoves(params);
                 default -> help();
-                //TODO add commands for gameplay
             };
         } catch (ResponseException ex) {
             return SET_TEXT_COLOR_RED + ex.getMessage() + RESET_TEXT_COLOR;
@@ -107,20 +106,12 @@ public class ChessClient {
     }
 
     //pre-game UI
-    public String quit() {
-        try {
-            assertLoggedOut();
-        } catch (Exception e) {
-            return help();
-        }
+    public String quit() throws ResponseException {
+        assertLoggedOut();
         return "quit";
     }
     public String login(String... params) throws ResponseException {
-        try {
-            assertLoggedOut();
-        } catch (Exception e) {
-            return help();
-        }
+        assertLoggedOut();
         //sanitize input
         if (params.length != 2) {
             throw new ResponseException(400, "Expected: login <USERNAME> <PASSWORD>");
@@ -302,8 +293,8 @@ public class ChessClient {
     public String leave() throws ResponseException {
         assertInGame();
         try {
-            webSocketFacade.leaveGame(authToken, gameData.gameID());
             state = PlayerState.LOGGED_IN;
+            webSocketFacade.leaveGame(authToken, gameData.gameID());
             team = null;
             gameData = null;
         } catch (Exception e) {
@@ -400,8 +391,8 @@ public class ChessClient {
         }
         return chosenGame;
     }
-    public void updateGameData(ChessGame updatedChessGame) {
-        gameData = new GameData(gameData.gameID(), gameData.whiteUsername(), gameData.blackUsername(), gameData.gameName(), updatedChessGame);
+    public void updateGameData(GameData updatedChessGame) {
+        gameData = updatedChessGame;
     }
     //chess positions
     private ChessPosition parsePosition(String position) throws ResponseException {

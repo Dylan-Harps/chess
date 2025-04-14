@@ -54,13 +54,12 @@ public class ConnectionManager {
     }
 
     public void send(int gameID, String recipient, ServerMessage notification) throws IOException {
-        //System.out.println("ConnectionManager.send(): sending");
+        //System.out.println("ConnectionManager.send(): entered send()");
         var removeList = new ArrayList<Connection>();
         var gameConnections = connections.get(gameID);
         for (var c : gameConnections) {
             if (c.session.isOpen()) {
                 if (c.participant.equals(recipient)) {
-                    //System.out.println("ConnectionManager.send(): " + new Gson().toJson(notification));
                     c.send(new Gson().toJson(notification));
                 }
             } else {

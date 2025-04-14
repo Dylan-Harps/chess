@@ -43,8 +43,8 @@ public class WebSocketHandler {
 
             //notify loadGame
             verifyGameID(gameID);
-            ChessGame game = database.getGame(gameID).game();
-            connections.send(gameID, participant, new LoadGameMessage(game));
+            var game = database.getGame(gameID);
+            connections.send(session, new LoadGameMessage(game));
 
             //notify others of joining the game
             String teamColor = getTeamColor(participant, gameID);
@@ -66,13 +66,13 @@ public class WebSocketHandler {
         try {
             //verify user
             verifyGameID(command.getGameID());
-            ChessGame game = database.getGame(gameID).game();
-            String team = game.getTeamTurn() == ChessGame.TeamColor.WHITE ? "WHITE" : "BLACK";
+            var game = database.getGame(gameID);
+            String team = game.game().getTeamTurn() == ChessGame.TeamColor.WHITE ? "WHITE" : "BLACK";
             participant = verifyUser(command);
             verifyTeam(gameID, participant, team);
 
             //make the move
-            game.makeMove(command.getMove());
+            game.game().makeMove(command.getMove());
             database.updateGame(gameID, game);
 
             //notify participants:
@@ -87,13 +87,13 @@ public class WebSocketHandler {
             // notify of check, checkmate, or stalemate
             ChessGame.TeamColor opponent = team.equals("WHITE") ? ChessGame.TeamColor.BLACK : ChessGame.TeamColor.WHITE;
             NotificationMessage checkNotification = null;
-            if (game.isInCheck(opponent)) {
+            if (game.game().isInCheck(opponent)) {
                 checkNotification = new NotificationMessage("Check!");
             }
-            if (game.isInCheckmate(opponent)) {
+            if (game.game().isInCheckmate(opponent)) {
                 checkNotification = new NotificationMessage("Checkmate!");
             }
-            if (game.isInStalemate(opponent)) {
+            if (game.game().isInStalemate(opponent)) {
                 checkNotification = new NotificationMessage("Stalemate!");
             }
             if (checkNotification != null) {
@@ -160,7 +160,6 @@ public class WebSocketHandler {
             //verify authToken
             AuthData authData = database.getAuth(command.getAuthToken());
             username = authData.username();
-            System.out.println("WebSocketHandler.verifyUser(): username = " + username);
         } catch (ResponseException e) {
             throw e;
         } catch (Exception e) {
@@ -173,17 +172,14 @@ public class WebSocketHandler {
         try {
             //verify that the participant is the correct player
             if (assertTeam != null) {
-                System.out.println("WebSocketHandler.verifyUser(): getting gameData with gameID " + gameID);
                 GameData gameData = database.getGame(gameID);
                 boolean isWhite = username.equals(gameData.whiteUsername());
                 boolean isBlack = username.equals(gameData.blackUsername());
 
                 if (assertTeam.equals("WHITE") && !isWhite) {
-                    System.out.println("WebSocketHandler.verifyUser(): whiteUser = " + gameData.whiteUsername());
                     throw new InvalidMoveException("Error: Invalid Move");
                 }
                 if (assertTeam.equals("BLACK") && !isBlack) {
-                    System.out.println("WebSocketHandler.verifyUser(): blackUser = " + gameData.blackUsername());
                     throw new InvalidMoveException("Error: Invalid Move");
                 }
                 if (assertTeam.equals("PLAYER") && !(isWhite || isBlack)) {
