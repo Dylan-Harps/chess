@@ -16,34 +16,42 @@ import java.net.URISyntaxException;
 
 public class WebSocketFacade extends Endpoint {
 
+    URI socketURI;
     Session session;
     MessageHandler messageHandler;
 
 
     public WebSocketFacade(String url, MessageHandler messageHandler) throws ResponseException {
         try {
-            url = url.replace("http", "ws");
-            URI socketURI = new URI(url + "/ws");
             this.messageHandler = messageHandler;
-
-            WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-            this.session = container.connectToServer(this, socketURI);
+            url = url.replace("http", "ws");
+            socketURI = new URI(url + "/ws");
+            openConnection();
 
             //set message handler
             this.session.addMessageHandler(new javax.websocket.MessageHandler.Whole<String>() {
                 @Override
                 public void onMessage(String message) {
+                    System.out.println("WebsocketFacade.onMessage(): message = " + message);
                     ServerMessage serverMessage = new Gson().fromJson(message, ServerMessage.class);
-                    serverMessage = switch (serverMessage.getServerMessageType()) {
-                        case NOTIFICATION -> new Gson().fromJson(message, NotificationMessage.class);
-                        case ERROR -> new Gson().fromJson(message, ErrorMessage.class);
-                        case LOAD_GAME -> new Gson().fromJson(message, LoadGameMessage.class);
+                    switch (serverMessage.getServerMessageType()) {
+                        case NOTIFICATION -> messageHandler.notify(new Gson().fromJson(message, NotificationMessage.class));
+                        case ERROR -> messageHandler.notify(new Gson().fromJson(message, ErrorMessage.class));
+                        case LOAD_GAME -> messageHandler.notify(new Gson().fromJson(message, LoadGameMessage.class));
                     };
-                    messageHandler.notify(serverMessage);
                 }
             });
-        } catch (DeploymentException | IOException | URISyntaxException ex) {
-            throw new ResponseException(500, ex.getMessage());
+        } catch (Exception e) {
+            throw new ResponseException(500, e.getMessage());
+        }
+    }
+
+    private void openConnection() throws ResponseException {
+        try {
+            WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+            this.session = container.connectToServer(this, socketURI);
+        } catch (Exception e) {
+            throw new ResponseException(500, e.getMessage());
         }
     }
 
@@ -55,6 +63,7 @@ public class WebSocketFacade extends Endpoint {
     public void connectToGame(String authToken, int gameID) throws ResponseException {
         try {
             var command = new ConnectCommand(authToken, gameID);
+            openConnection();
             this.session.getBasicRemote().sendText(new Gson().toJson(command));
         } catch (IOException ex) {
             throw new ResponseException(500, ex.getMessage());

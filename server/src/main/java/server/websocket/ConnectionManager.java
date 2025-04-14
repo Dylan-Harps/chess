@@ -37,6 +37,9 @@ public class ConnectionManager {
     public void broadcast(int gameID, String excludeParticipant, ServerMessage notification) throws IOException {
         var removeList = new ArrayList<Connection>();
         var gameConnections = connections.get(gameID);
+        if (gameConnections.isEmpty()) {
+            return;
+        }
         for (var c : gameConnections) {
             if (c.session.isOpen()) {
                 if (!c.participant.equals(excludeParticipant)) {
@@ -53,28 +56,8 @@ public class ConnectionManager {
         }
     }
 
-    public void send(int gameID, String recipient, ServerMessage notification) throws IOException {
-        //System.out.println("ConnectionManager.send(): entered send()");
-        var removeList = new ArrayList<Connection>();
-        var gameConnections = connections.get(gameID);
-        for (var c : gameConnections) {
-            if (c.session.isOpen()) {
-                if (c.participant.equals(recipient)) {
-                    c.send(new Gson().toJson(notification));
-                }
-            } else {
-                removeList.add(c);
-            }
-        }
-
-        // Clean up any connections that were left open.
-        for (var c : removeList) {
-            remove(gameID, c.participant);
-        }
-    }
-
     public void send(Session session, ServerMessage notification) throws IOException {
-        //System.out.println("ConnectionManager.send()2: " + new Gson().toJson(notification));
+        System.out.println("ConnectionManager.send(): " + new Gson().toJson(notification));
         session.getRemote().sendString(new Gson().toJson(notification));
     }
 }

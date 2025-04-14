@@ -117,13 +117,13 @@ public class WebSocketHandler {
             GameData newGameData = new GameData(gameID, newWhite, newBlack, gameData.gameName(), gameData.game());
             database.updateGame(gameID, newGameData);
 
-            //end connection
-            connections.remove(gameID, participant);
-
             //notify participants
             var message = String.format("%s left the game", participant);
             var notification = new NotificationMessage(message);
             connections.broadcast(gameID, participant, notification);
+
+            //end connection
+            connections.remove(gameID, participant);
         } catch (Exception e) {
             connections.send(session, new ErrorMessage(e.getMessage()));
         }

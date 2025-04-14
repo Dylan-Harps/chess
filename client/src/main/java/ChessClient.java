@@ -1,15 +1,10 @@
-import chess.ChessGame;
-import chess.ChessMove;
-import chess.ChessPiece;
-import chess.ChessPosition;
+import chess.*;
 import endpoints.*;
 import model.GameData;
 import ui.ServerFacade;
 import websocket.MessageHandler;
 import websocket.WebSocketFacade;
-
 import java.util.*;
-
 import static ui.EscapeSequences.*;
 
 public class ChessClient {
@@ -19,12 +14,7 @@ public class ChessClient {
     //user info
     private String username = null;
     private String authToken = null;
-    private enum PlayerState {
-        LOGGED_OUT,
-        LOGGED_IN,
-        PLAYING,
-        OBSERVING
-    }
+    private enum PlayerState { LOGGED_OUT, LOGGED_IN, PLAYING, OBSERVING }
     private PlayerState state = PlayerState.LOGGED_OUT;
 
     //game info (when playing)
@@ -123,9 +113,8 @@ public class ChessClient {
         //login the user
         try {
             String username = params[0];
-            String password = params[1];
             //set user info
-            authToken = serverFacade.loginUser(new LoginRequest(username, password)).authToken();
+            authToken = serverFacade.loginUser(new LoginRequest(username, params[1])).authToken();
             state = PlayerState.LOGGED_IN;
             this.username = username;
 
@@ -135,11 +124,7 @@ public class ChessClient {
         }
     }
     public String register(String... params) throws ResponseException {
-        try {
-            assertLoggedOut();
-        } catch (Exception e) {
-            return help();
-        }
+        assertLoggedOut();
         //sanitize input
         if (params.length != 3) {
             throw new ResponseException(400, "Expected: register <USERNAME> <PASSWORD> <EMAIL>");
@@ -225,8 +210,7 @@ public class ChessClient {
             throw new ResponseException(400, "<WHITE|BLACK> should be either WHITE or BLACK");
         }
         if (allGames == null) {
-            //since selectedId() uses the result from listGames(), if they haven't called it yet, do it for them
-            listGames();
+            listGames(); //since selectedId() uses the result from listGames(), if they haven't called it yet, do it for them
         }
 
         //join the game
@@ -258,8 +242,7 @@ public class ChessClient {
             throw new ResponseException(400, "<ID> should be an integer");
         }
         if (allGames == null) {
-            //since selectedId() uses the result from listGames(), if they haven't called it yet, do it for them
-            listGames();
+            listGames(); //since selectedId() uses the result from listGames(), if they haven't called it yet, do it for them
         }
 
         //join game as observer
@@ -293,10 +276,11 @@ public class ChessClient {
     public String leave() throws ResponseException {
         assertInGame();
         try {
+            int gameID = gameData.gameID();
             state = PlayerState.LOGGED_IN;
-            webSocketFacade.leaveGame(authToken, gameData.gameID());
             team = null;
             gameData = null;
+            webSocketFacade.leaveGame(authToken, gameID);
         } catch (Exception e) {
             throw new ResponseException(500, e.getMessage());
         }
@@ -308,10 +292,8 @@ public class ChessClient {
         if (params.length < 3 || params.length > 4 || !params[0].equals("move")) {
             throw new ResponseException(400, "Expected: make move <FROM POSITION> <TO POSITION> <PROMOTION>");
         }
-        ChessPosition start = parsePosition(params[1]);
-        ChessPosition end = parsePosition(params[2]);
         ChessPiece.PieceType promotion = params.length == 4 ? parsePromotion(params[3]) : null;
-        ChessMove move = new ChessMove(start, end, promotion);
+        ChessMove move = new ChessMove(parsePosition(params[1]), parsePosition(params[2]), promotion);
 
         //make the move
         try {
@@ -433,54 +415,33 @@ public class ChessClient {
 
     //displaying the board
     public String displayGame() {
-        //create and set up the board
-        String[][] tempBoard = setUpBoardLabels();
-        putPiecesOnBoardHighlight(tempBoard, gameData);
-
-        //turn tempBoard into a String, reversing it if viewing from black's perspective
-        StringBuilder result = new StringBuilder();
-        result.append(gameData.gameName()).append(":\n");
-        flipBoardIfNeeded(result, tempBoard);
-
-        return result.toString();
+        return displayGameHighlight(null, null);
     }
     private String[][] setUpBoardLabels() {
         String[][] tempBoard = new String[10][10];
-        var SET_BG = SET_BG_COLOR_LIGHT_GREY;
+        var setBG = SET_BG_COLOR_LIGHT_GREY;
 
         //corners
-        tempBoard[0][0] = SET_BG + "   " + RESET_BG_COLOR;
-        tempBoard[0][9] = SET_BG + "   " + RESET_BG_COLOR;
-        tempBoard[9][0] = SET_BG + "   " + RESET_BG_COLOR;
-        tempBoard[9][9] = SET_BG + "   " + RESET_BG_COLOR;
+        tempBoard[0][0] = setBG + "   " + RESET_BG_COLOR;
+        tempBoard[0][9] = setBG + "   " + RESET_BG_COLOR;
+        tempBoard[9][0] = setBG + "   " + RESET_BG_COLOR;
+        tempBoard[9][9] = setBG + "   " + RESET_BG_COLOR;
 
         //column labels (letters)
         char col = 'a';
         for (int i = 1; i <= 8; ++i) {
-            tempBoard[0][i] = SET_BG + " " + col + " " + RESET_BG_COLOR;
-            tempBoard[9][i] = SET_BG + " " + col + " " + RESET_BG_COLOR;
+            tempBoard[0][i] = setBG + " " + col + " " + RESET_BG_COLOR;
+            tempBoard[9][i] = setBG + " " + col + " " + RESET_BG_COLOR;
             ++col;
         }
 
         //row labels (numbers)
         for (int i = 1; i <= 8; ++i) {
-            tempBoard[9-i][0] = SET_BG + " " + i + " " + RESET_BG_COLOR;
-            tempBoard[9-i][9] = SET_BG + " " + i + " " + RESET_BG_COLOR;
+            tempBoard[9-i][0] = setBG + " " + i + " " + RESET_BG_COLOR;
+            tempBoard[9-i][9] = setBG + " " + i + " " + RESET_BG_COLOR;
         }
 
         return tempBoard;
-    }
-    private void putPiecesOnBoardHighlight(String[][] board, GameData chessGame) {
-        for (int r = 1; r <= 8; ++r) {
-            for (int c = 1; c <= 8; ++c) {
-                ChessPiece p = chessGame.game().getBoard().getPiece(new ChessPosition(r, c));
-                board[9-r][c] = squareColorHighlight(r, c) + printPiece(p) + RESET_BG_COLOR + RESET_TEXT_COLOR;
-            }
-        }
-
-    }
-    private String squareColorHighlight(int row, int col) {
-        return (row + col) % 2 == 0 ? SET_BG_COLOR_BLACK : SET_BG_COLOR_WHITE;
     }
     private String printPiece(ChessPiece p) {
         if (p == null) {

@@ -17,7 +17,6 @@ public class ChessService {
 
     public ChessService() {
         this.database = new SQLDataAccess();
-        database.clear();
     }
 
     public ChessService(SQLDataAccess database) {

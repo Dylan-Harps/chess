@@ -38,22 +38,27 @@ public class Repl implements MessageHandler {
 
     @Override
     public void notify(ServerMessage message) {
+        System.out.println("entered Repl.notify()");
         switch (message.getServerMessageType()) {
             case NOTIFICATION -> notifyNotification((NotificationMessage) message);
             case ERROR -> notifyError((ErrorMessage) message);
             case LOAD_GAME -> notifyLoadGame((LoadGameMessage) message);
         }
+        printPrompt();
     }
 
     public void notifyNotification(NotificationMessage message) {
+        System.out.println("entered Repl.notifyNotification()");
         System.out.print(message.getMessage());
     }
 
     public void notifyError(ErrorMessage message) {
+        System.out.println("entered Repl.notifyError()");
         System.out.print(message.getMessage());
     }
 
     public void notifyLoadGame(LoadGameMessage message) {
+        System.out.println("entered Repl.notifyLoadGame()");
         client.updateGameData(message.getGame());
         System.out.print(client.displayGame());
     }
