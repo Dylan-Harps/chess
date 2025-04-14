@@ -88,16 +88,17 @@ public class WebSocketHandler {
             ChessGame.TeamColor opponent = team.equals("WHITE") ? ChessGame.TeamColor.BLACK : ChessGame.TeamColor.WHITE;
             NotificationMessage checkNotification = null;
             if (game.game().isInCheck(opponent)) {
-                checkNotification = new NotificationMessage("Check!");
-            }
-            if (game.game().isInCheckmate(opponent)) {
-                checkNotification = new NotificationMessage("Checkmate!");
+                if (game.game().isInCheckmate(opponent)) {
+                    checkNotification = new NotificationMessage("Checkmate!");
+                } else {
+                    checkNotification = new NotificationMessage("Check!");
+                }
             }
             if (game.game().isInStalemate(opponent)) {
                 checkNotification = new NotificationMessage("Stalemate!");
             }
             if (checkNotification != null) {
-                connections.broadcast(gameID, null, notification);
+                connections.broadcast(gameID, null, checkNotification);
             }
         } catch (Exception e) {
             connections.send(session, new ErrorMessage(e.getMessage()));

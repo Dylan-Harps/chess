@@ -38,7 +38,6 @@ public class Repl implements MessageHandler {
 
     @Override
     public void notify(ServerMessage message) {
-        System.out.println("entered Repl.notify()");
         switch (message.getServerMessageType()) {
             case NOTIFICATION -> notifyNotification((NotificationMessage) message);
             case ERROR -> notifyError((ErrorMessage) message);

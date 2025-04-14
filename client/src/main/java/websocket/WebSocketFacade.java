@@ -41,7 +41,6 @@ public class WebSocketFacade extends Endpoint {
             this.session.addMessageHandler(new javax.websocket.MessageHandler.Whole<String>() {
                 @Override
                 public void onMessage(String message) {
-                    System.out.println("WebsocketFacade.onMessage(): message = " + message);
                     ServerMessage serverMessage = new Gson().fromJson(message, ServerMessage.class);
                     switch (serverMessage.getServerMessageType()) {
                         case NOTIFICATION -> messageHandler.notify(new Gson().fromJson(message, NotificationMessage.class));

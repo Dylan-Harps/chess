@@ -23,7 +23,7 @@ public class ChessClient {
 
     //store gamesList
     Integer nextClientGameID = 1;
-    private Map<Integer, Integer> gameIdList = new TreeMap<>(); //<client id, database id>
+    private final Map<Integer, Integer> gameIdList = new TreeMap<>(); //<client id, database id>
     private Collection<GameData> allGames = null;
 
     public ChessClient(String port, MessageHandler messageHandler) {
@@ -183,7 +183,8 @@ public class ChessClient {
         nextClientGameID = 1;
         for (var dbGame : gamesList) {
             gameIdList.put(nextClientGameID, dbGame.gameID());
-            result.append(nextClientGameID).append(". ").append(dbGame.gameName()).append('\n');
+            result.append(nextClientGameID).append(". ").append(dbGame.gameName());
+            result.append(dbGame.game().getGameOver() ? " (Finished)\n" : '\n');
             String white = (dbGame.whiteUsername() != null) ? dbGame.whiteUsername() : "Nobody";
             result.append("    ").append(white).append(" playing as white\n");
             String black = (dbGame.blackUsername() != null) ? dbGame.blackUsername() : "Nobody";
@@ -317,7 +318,7 @@ public class ChessClient {
         //sanitize input
         if (params.length != 3
                 || !(params[0].equals("legal") || params[1].equals("moves"))) {
-            throw new ResponseException(400, "Expected: highlight legal moves");
+            throw new ResponseException(400, "Expected: highlight legal moves <POSITION>");
         }
         ChessPosition target = null;
         try {
