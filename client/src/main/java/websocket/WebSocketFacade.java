@@ -27,6 +27,15 @@ public class WebSocketFacade extends Endpoint {
             url = url.replace("http", "ws");
             socketURI = new URI(url + "/ws");
             openConnection();
+        } catch (Exception e) {
+            throw new ResponseException(500, e.getMessage());
+        }
+    }
+
+    private void openConnection() throws ResponseException {
+        try {
+            WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+            this.session = container.connectToServer(this, socketURI);
 
             //set message handler
             this.session.addMessageHandler(new javax.websocket.MessageHandler.Whole<String>() {
@@ -41,15 +50,6 @@ public class WebSocketFacade extends Endpoint {
                     };
                 }
             });
-        } catch (Exception e) {
-            throw new ResponseException(500, e.getMessage());
-        }
-    }
-
-    private void openConnection() throws ResponseException {
-        try {
-            WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-            this.session = container.connectToServer(this, socketURI);
         } catch (Exception e) {
             throw new ResponseException(500, e.getMessage());
         }

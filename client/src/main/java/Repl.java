@@ -48,17 +48,14 @@ public class Repl implements MessageHandler {
     }
 
     public void notifyNotification(NotificationMessage message) {
-        System.out.println("entered Repl.notifyNotification()");
         System.out.print(message.getMessage());
     }
 
     public void notifyError(ErrorMessage message) {
-        System.out.println("entered Repl.notifyError()");
-        System.out.print(message.getMessage());
+        System.out.print(SET_TEXT_COLOR_RED + message.getMessage() + RESET_TEXT_COLOR);
     }
 
     public void notifyLoadGame(LoadGameMessage message) {
-        System.out.println("entered Repl.notifyLoadGame()");
         client.updateGameData(message.getGame());
         System.out.print(client.displayGame());
     }
