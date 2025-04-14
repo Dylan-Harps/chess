@@ -17,19 +17,21 @@ public class ChessService {
 
     public ChessService() {
         this.database = new SQLDataAccess();
+        id = 1;
     }
 
     public ChessService(SQLDataAccess database) {
         this.database = database;
+        id = database.listGames().size() + 1;
     }
 
-    private static int id = 1;
+    private int id;
 
     private static String generateToken() {
         return UUID.randomUUID().toString();
     }
 
-    private static int generateGameID() {
+    private int generateGameID() {
         return id++;
     }
 

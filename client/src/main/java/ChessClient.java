@@ -166,7 +166,8 @@ public class ChessClient {
         //create the game
         String gameName = params[0];
         int dbGameID = serverFacade.createGame(new CreateGameRequest(authToken, gameName)).gameID();
-        gameIdList.put(nextClientGameID++, dbGameID); //optional, I think
+        nextClientGameID = gameIdList.size();
+        gameIdList.put(nextClientGameID, dbGameID); //optional, I think
 
         //after adding the game, refresh games list
         allGames = serverFacade.listGames(new ListGamesRequest(authToken)).games();
