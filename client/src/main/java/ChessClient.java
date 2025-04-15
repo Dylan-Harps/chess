@@ -48,7 +48,9 @@ public class ChessClient {
                 case "redraw" -> redrawChessBoard(params);
                 case "leave" -> leave();
                 case "make" -> makeMove(params);
-                case "resign" -> resign();
+                case "resign" -> "Are you sure? <YES|NO>";
+                case "yes" -> resign();
+                case "no" -> displayGame();
                 case "highlight" -> highlightLegalMoves(params);
                 default -> help();
             };
@@ -112,16 +114,13 @@ public class ChessClient {
 
         //login the user
         try {
-            String username = params[0];
-            //set user info
+            username = params[0];
             authToken = serverFacade.loginUser(new LoginRequest(username, params[1])).authToken();
             state = PlayerState.LOGGED_IN;
-            this.username = username;
-
-            return "Logged in as " + username;
         } catch (ResponseException e) {
             throw new ResponseException(400, "Wrong username or password");
         }
+        return "Logged in as " + username;
     }
     public String register(String... params) throws ResponseException {
         assertLoggedOut();
@@ -132,18 +131,13 @@ public class ChessClient {
 
         //register the user
         try {
-            String username = params[0];
-            String password = params[1];
-            String email = params[2];
-            //set user info
-            authToken = serverFacade.registerUser(new RegisterRequest(username, password, email)).authToken();
+            username = params[0];
             state = PlayerState.LOGGED_IN;
-            this.username = username;
-
-            return "Logged in as " + username;
+            authToken = serverFacade.registerUser(new RegisterRequest(username, params[1], params[2])).authToken();
         } catch (ResponseException e) {
             throw new ResponseException(400, "That username is already taken");
         }
+        return "Logged in as " + username;
     }
     public String logout() throws ResponseException {
         assertLoggedIn();
@@ -151,34 +145,33 @@ public class ChessClient {
 
         //reset user info
         authToken = null;
-        state = PlayerState.LOGGED_OUT;
         username = null;
+        state = PlayerState.LOGGED_OUT;
 
         return "Logged out";
     }
     public String createGame(String... params) throws ResponseException {
-        //sanitize input
         assertLoggedIn();
+        //sanitize input
         if (params.length != 1) {
             throw new ResponseException(400, "Expected: create <NAME>");
         }
 
         //create the game
-        String gameName = params[0];
-        int dbGameID = serverFacade.createGame(new CreateGameRequest(authToken, gameName)).gameID();
+        int dbGameID = serverFacade.createGame(new CreateGameRequest(authToken, params[0])).gameID();
         nextClientGameID = gameIdList.size();
         gameIdList.put(nextClientGameID, dbGameID); //optional, I think
 
         //after adding the game, refresh games list
         allGames = serverFacade.listGames(new ListGamesRequest(authToken)).games();
 
-        return "Created game with the name " + gameName;
+        return "Created game with the name " + params[0];
     }
     public String listGames() throws ResponseException {
         assertLoggedIn();
         var gamesList = serverFacade.listGames(new ListGamesRequest(authToken)).games();
         allGames = gamesList; //refresh list of games
-        gameIdList.clear(); //If there are errors with createGame, try deleting this line
+        gameIdList.clear();
 
         var result = new StringBuilder().append("Available games:\n");
         nextClientGameID = 1;
@@ -218,10 +211,9 @@ public class ChessClient {
         //join the game
         try {
             serverFacade.joinGame(new JoinGameRequest(authToken, teamColor, selectGameID(selectedId)));
-            GameData gameData = selectGameData(selectGameID(selectedId));
+            gameData = selectGameData(selectGameID(selectedId));
             state = PlayerState.PLAYING;
             team = teamColor;
-            this.gameData = gameData;
             webSocketFacade.connectToGame(authToken, selectGameID(selectedId));
         } catch (Exception e) {
             if (e.getMessage().equals("Invalid game ID")) {
@@ -249,10 +241,9 @@ public class ChessClient {
 
         //join game as observer
         try {
-            GameData gameData = selectGameData(selectGameID(selectedId));
+            gameData = selectGameData(selectGameID(selectedId));
             state = PlayerState.OBSERVING;
             team = "observer";
-            this.gameData = gameData;
             webSocketFacade.connectToGame(authToken, selectGameID(selectedId));
         } catch (Exception e) {
             if (e.getMessage().equals("Invalid game ID")) {
@@ -321,7 +312,7 @@ public class ChessClient {
                 || !(params[0].equals("legal") || params[1].equals("moves"))) {
             throw new ResponseException(400, "Expected: highlight legal moves <POSITION>");
         }
-        ChessPosition target = null;
+        ChessPosition target;
         try {
             target = parsePosition(params[2]);
         } catch (Exception e) {

@@ -12,7 +12,6 @@ import websocket.messages.ServerMessage;
 import javax.websocket.*;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 
 public class WebSocketFacade extends Endpoint {
 
@@ -46,7 +45,7 @@ public class WebSocketFacade extends Endpoint {
                         case NOTIFICATION -> messageHandler.notify(new Gson().fromJson(message, NotificationMessage.class));
                         case ERROR -> messageHandler.notify(new Gson().fromJson(message, ErrorMessage.class));
                         case LOAD_GAME -> messageHandler.notify(new Gson().fromJson(message, LoadGameMessage.class));
-                    };
+                    }
                 }
             });
         } catch (Exception e) {

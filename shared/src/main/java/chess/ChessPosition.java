@@ -48,7 +48,7 @@ public class ChessPosition {
     }
 
     public String toString() {
-        char letter = (char) ('a' + col);
+        char letter = (char) ('a' + col - 1);
         return letter + Integer.toString(row);
     }
 }

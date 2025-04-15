@@ -33,7 +33,7 @@ public class WebSocketHandler {
 
     private void connect(Session session, ConnectCommand command) throws ResponseException, IOException {
         int gameID = command.getGameID();
-        String participant = null;
+        String participant;
 
         try {
             participant = verifyUser(command);
@@ -62,7 +62,7 @@ public class WebSocketHandler {
     private void makeMove(Session session, MakeMoveCommand command) throws ResponseException, IOException {
         int gameID = command.getGameID();
 
-        String participant = null;
+        String participant;
         try {
             //verify user
             verifyGameID(command.getGameID());

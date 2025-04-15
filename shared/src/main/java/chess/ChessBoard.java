@@ -196,7 +196,7 @@ public class ChessBoard {
         for (int r = 1; r <= 8; ++r) {
             for (int c = 1; c <= 8; ++c) {
                 ChessPiece p = board[r-1][c-1];
-                out.append("|" + ((p == null) ? " " : p.toString()));
+                out.append("|").append((p == null) ? " " : p.toString());
             }
             out.append("|\n");
         }

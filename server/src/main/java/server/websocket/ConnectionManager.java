@@ -57,7 +57,6 @@ public class ConnectionManager {
     }
 
     public void send(Session session, ServerMessage notification) throws IOException {
-        System.out.println("ConnectionManager.send(): " + new Gson().toJson(notification));
         session.getRemote().sendString(new Gson().toJson(notification));
     }
 }

@@ -25,6 +25,7 @@ public class ChessPiece {
         this.team = that.getTeamColor();
         this.type = that.getPieceType();
         this.hasMoved = that.getHasMoved();
+        this.didDoubleMoveLastTurn = that.getDidDoubleMoveLastTurn();
     }
 
     @Override
@@ -110,20 +111,14 @@ public class ChessPiece {
      * @return Collection of valid moves
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
-        PieceMovesCalculator calc = null;
-        switch (type) {
-            case ChessPiece.PieceType.PAWN -> { calc = new PawnMovesCalculator(board, myPosition, this); }
-            case ChessPiece.PieceType.ROOK -> { calc = new RookMovesCalculator(board, myPosition, this); }
-            case ChessPiece.PieceType.KNIGHT -> { calc = new KnightMovesCalculator(board, myPosition, this); }
-            case ChessPiece.PieceType.BISHOP -> { calc = new BishopMovesCalculator(board, myPosition, this); }
-            case ChessPiece.PieceType.KING -> { calc = new KingMovesCalculator(board, myPosition, this); }
-            case ChessPiece.PieceType.QUEEN -> { calc = new QueenMovesCalculator(board, myPosition, this); }
-        }
-        if (calc != null) {
-            return calc.calculateMoves();
-        }
-        else {
-            return null;
-        }
+        PieceMovesCalculator calc = switch (type) {
+            case ChessPiece.PieceType.PAWN -> new PawnMovesCalculator(board, myPosition, this);
+            case ChessPiece.PieceType.ROOK -> new RookMovesCalculator(board, myPosition, this);
+            case ChessPiece.PieceType.KNIGHT -> new KnightMovesCalculator(board, myPosition, this);
+            case ChessPiece.PieceType.BISHOP -> new BishopMovesCalculator(board, myPosition, this);
+            case ChessPiece.PieceType.KING -> new KingMovesCalculator(board, myPosition, this);
+            case ChessPiece.PieceType.QUEEN -> new QueenMovesCalculator(board, myPosition, this);
+        };
+        return calc.calculateMoves();
     }
 }
